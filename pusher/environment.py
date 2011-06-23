@@ -115,28 +115,8 @@ class PusherEnvironment(object):
     for server in deploy.servers:
       for check in deploy.checks:
         line = "Check #{:03} {}:".format(i, check.name)
-        print line, "Running", check, "on", server
-
-        try:
-          exitcode, stdout, stderr = check.run(self, server)
-        except RuntimeError, e:
-          logger.error("Check failed: {}".format(str(e)))
-          return False
-
-        def print_out(name, s):
-          for l in s.split("\n"):
-            if l.strip() == "": l = "(empty)"
-            print line, name, l
-
-        if stdout: print_out("stdout:", stdout)
-        if stderr: print_out("stderr:", stderr)
-
-        print line, "Exited with", exitcode
-        
-        if exitcode != 0:
-          logger.info("Check returned non-zero exit status")
+        if server.pretty_run(check.command, line=line) != 0:
           ok = False
-
         i += 1
 
     return ok
@@ -162,6 +142,15 @@ class PusherEnvironment(object):
       return False
 
     all_ok = True
+
+    for server in deploy.servers:
+      for module in deploy.modules:
+        try:
+          module.check(server)
+        except Exception, e:
+          print "Bad server {}: {}".format(server, str(e))
+          all_ok = False
+
     for module in deploy.modules:
       if not self.archive.contains(module, stage, version):
         print "Not in archive (run update)", self.archive.module_path(module, stage, version)
@@ -181,6 +170,29 @@ class PusherEnvironment(object):
           source.close()
 
     return True
+
+  def SETUP_validate(self, args):
+    if len(args) != 1:
+      raise RuntimeError, "Number of arguments must be exactly 1"
+    if not self.contains(args[0]):
+      raise RuntimeError, "Environment does not contain stage: " + args[0]
+    return args, {}
+
+  def SETUP_run(self, stage):
+    """
+    @usage setup <stage>
+    @short Setup all servers specified in <stage>
+    @desc
+    """
+    deploy = self.deploys.get(stage, None)
+
+    if not deploy:
+      logger.error("No such stage: " + stage)
+      return False
+
+    for server in deploy.servers:
+      for module in deploy.modules:
+        module.setup(server)
 
   def CHECKOUT_validate(self, args):
     if len(args) != 2:
@@ -203,34 +215,75 @@ class PusherEnvironment(object):
       logger.error("No such stage: " + stage)
       return False
 
+    all_ok = True
+    for server in deploy.servers:
+      for module in deploy.modules:
+        try:
+          module.check(server)
+        except Exception, e:
+          print "Bad server {}: {}".format(server, str(e))
+          all_ok = False
+
+    if not all_ok:
+      return False
+
     previous = list()
-    rollback = False
+    changed = list()
 
     print "Downloading rollback states"
+
     for server in deploy.servers:
       for module in deploy.modules:
         previous.append(((server, module), module.current(server)))
+        changed.append(False)
 
-    for server in deploy.servers:
-      for module in deploy.modules:
-        print("Checking out {}-{} on {}".format(deploy.name, version, server))
-        try:
-          module.checkout(server, deploy.name, version)
-        except Exception, e:
-          logger.error("Failed to checkout: {}".format(str(e)))
-          rollback = True
-          break
+    for i, ((server, module), (current_name, current_version)) in enumerate(previous):
+      if "before_checkout" in module.config:
+        print "Triggering", module.name, "{before_checkout} on", server
+        server.pretty_run(module.config["before_checkout"])
 
-      if rollback:
+    for i, ((server, module), (current_name, current_version)) in enumerate(previous):
+      if current_name == deploy.name and current_version == version:
+        print("Current checkout is already active")
+        continue
+
+      print("Checking out {}-{} on {}".format(deploy.name, version, server))
+
+      try:
+        module.checkout(server, deploy.name, version)
+      except Exception, e:
+        logger.error("Failed to checkout: {}".format(str(e)))
         break
 
-    if rollback:
-      logger.info("Rolling back checkout")
-      for (server, module), (deploy_name, version) in previous:
-        print("Checking out {}-{} on {}".format(deploy_name, version, server))
-        module.checkout(server, deploy_name, version)
-    
-    return True
+      changed[i] = True
+
+    try:
+      if all(changed):
+        return True
+
+      print("Rolling back checkout")
+      for i, ((server, module), (deploy_name, version)) in enumerate(previous):
+        if not changed[i]:
+          continue
+
+        print("Reverting back to {}-{} on {}".format(deploy_name, version, server))
+
+        try:
+          module.checkout(server, deploy_name, version)
+        except Exception, e:
+          logger.error("Failed to rollback: {}".format(str(e)))
+
+        changed[i] = False
+
+      if any(changed):
+        print "Could not rollback all changes!!!"
+
+      return False
+    finally:
+      for i, ((server, module), _) in enumerate(previous):
+        if "after_checkout" in module.config:
+          print "Triggering", module.name, "{after_checkout} on", server
+          server.pretty_run(module.config["after_checkout"])
 
   def HELP_validate(self, args):
     if len(args) != 1:
@@ -345,7 +398,8 @@ def create_env(root, environ, opts):
   cache = dict(config)
 
   for k in config:
-    config[k] = config[k].format(**cache)
+    if isinstance(config[k], basestring):
+      config[k] = config[k].format(**cache)
 
   objects = dict()
   

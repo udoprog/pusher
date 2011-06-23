@@ -58,6 +58,9 @@ class SFTPClient:
       fp.close()
       raise
 
+  def touch(self, path):
+    self.upload_string("", path)
+
   def download_string(self, path):
     from cStringIO import StringIO
     fp = StringIO()
@@ -127,10 +130,10 @@ class SFTPClient:
 class SSHClient:
   def __init__(self, ssh_address, **config):
     self.ssh = None
-    self.check_threshold = config.get("ssh_check_threshold", 5)
+    self.timeout         = config.get("ssh_timeout", 5)
     self.bufsize         = config.get("ssh_bufsize", 2 ** 20)
     self.io_sleep        = config.get("ssh_io_sleep", 0.1)
-    self.io_sleep_limit  = config.get("ssh_io_sleep_limit", 100)
+    self.io_sleep_limit  = int(self.timeout / self.io_sleep)
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -183,7 +186,7 @@ class SSHClient:
     stderr = StringIO()
     
     try:
-      chan.settimeout(float(self.check_threshold))
+      chan.settimeout(float(self.timeout))
       chan.exec_command(command + "\n")
 
       i = 0
@@ -202,7 +205,7 @@ class SSHClient:
         if i < self.io_sleep_limit:
           i += 1
         else:
-          raise RuntimeError, "ssh_io_sleep_limit reached"
+          raise RuntimeError, "ssh_timeout reached"
 
       return chan.recv_exit_status(), stdout.getvalue(), stderr.getvalue()
     finally:

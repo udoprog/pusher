@@ -16,7 +16,30 @@ class Server(CompBase):
 
   def __init__(self, config):
     self._ssh_connection = None
+    self.server_check = config.get("server_check", ".pusher")
     CompBase.__init__(self, config)
+
+  def pretty_run(self, command, line="#: ", stream=sys.stdout, client=None):
+    if client is None:
+      client = self.connect()
+
+    print >> stream, line, "Running", command, "on", self
+    exitcode, stdout, stderr = client.run(command)
+
+    def print_out(name, s):
+      for l in s.split("\n"):
+        if l.strip() == "": l = "(empty)"
+        print >> stream, line, name, l
+
+    if stdout: print_out("stdout:", stdout)
+    if stderr: print_out("stderr:", stderr)
+
+    print >> stream, line, "Exited with", exitcode
+    
+    if exitcode != 0:
+      logger.info("Returned non-zero exit status")
+
+    return exitcode
 
   def connect(self):
     """

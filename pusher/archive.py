@@ -11,15 +11,14 @@ class TarFile:
     import tarfile
     import tempfile
 
-    self.archive = archive
     self.module = module
-    self.stage = stage
     self.version = version
 
+    self.module_path =  archive.module_path(module, stage, version)
+    self.module_path_tmp = self.module_path + ".tmp"
     self.not_finished = False
 
-    (fd, self.path) = tempfile.mkstemp(".tar")
-    self.fp = os.fdopen(fd, "w")
+    self.fp = open(self.module_path_tmp, "w")
     self.tarfile = tarfile.open(mode="w", fileobj=self.fp)
 
   def unfinished(self):
@@ -47,15 +46,13 @@ class TarFile:
       sp.close()
 
   def close(self):
+    self.fp.close()
+
     if self.not_finished:
-      os.remove(self.path)
+      os.remove(self.module_path_tmp)
       return
 
-    try:
-      p = self.archive.module_path(self.module, self.stage, self.version)
-      os.rename(self.path, p)
-    finally:
-      self.fp.close()
+    os.rename(self.module_path_tmp, self.module_path)
 
 class Archive:
   def __init__(self, env, path):

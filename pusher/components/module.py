@@ -61,6 +61,30 @@ class Module(CompBase):
     release_tar  = "{}/{}-{}.tar".format(*rr)
     return release_path, release_tmp, release_tar
 
+  def check(self, server):
+    client = server.connect()
+    sftp = client.open_sftp()
+
+    if not sftp.is_dir(server.server_root):
+      raise RuntimeError, "Server root does not exist (run setup): " + server.server_root
+
+    server_check = "{}/{}".format(server.server_root, server.server_check)
+
+    if not sftp.is_file(server_check):
+      raise RuntimeError, "Server check does not exist (run setup): " + server_check
+
+  def setup(self, server):
+    client = server.connect()
+    sftp = client.open_sftp()
+
+    if not sftp.is_dir(server.server_root):
+      sftp.mkdir(server.server_root)
+
+    server_check = "{}/{}".format(server.server_root, server.server_check)
+
+    if not sftp.is_file(server_check):
+      sftp.touch(server_check)
+
   def checkout(self, server, deploy_name, version):
     client = server.connect()
     sftp = client.open_sftp()
@@ -83,11 +107,11 @@ class Module(CompBase):
     if sftp.is_sym(self.current_path):
       if sftp.normalize(self.current_path) == release_full:
         logger.info("Release already checked out")
-        return
+      else:
+        sftp.remove(self.current_path)
+        sftp.symlink(release_path, self.current_path)
 
-      sftp.remove(self.current_path)
-
-    sftp.symlink(release_path, self.current_path)
+    logger.info("Uploading revision string")
     revision_str = "{}:{}".format(deploy_name, version)
     sftp.upload_string(revision_str, self.revision_path)
 
