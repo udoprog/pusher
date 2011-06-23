@@ -4,166 +4,154 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from .base import BaseHandle
+from .base import IHandle
 
-class HttpHandle(BaseHandle):
+from zope.interface import implements
+
+class HttpHandle:
+  implements(IHandle)
+
   scheme = "http"
 
   module_version_header = "X-Pusher-Version"
 
   def __init__(self, url, version, config):
-    self.url = url
-    self.actual_url = None
-    self.version = version
-    self.config = config
+    self.url          = url
+    self.version      = version
+    self.config       = config
 
-    self.user_agent = config.get("http_user_agent", "Pusher/2.0")
-    self.use_cookies = config.get("http_use_cookies", True)
+    self.user_agent   = config.get("http_user_agent", "Pusher/2.0")
+    self.use_cookies  = config.get("http_use_cookies", True)
     self.send_version = config.get("http_send_version", True)
     self.default_name = config.get("http_default_name", "index")
 
-    self.requested = False
+    self.size         = None
+    self.fileobj      = None
+    self.name         = None
+    self.mtime        = None
 
-    self.size = None
-    self.fileobj = None
-    self._temp_path = None
-    self._content_type = None
+    self.requested    = False
+    self.temp         = None
 
-  def _request(self):
-    import httplib
+  def request(self):
+    import time
     import urlparse
-    import shutil
-    import Cookie
 
-    cookie = None
-
-    redirects = list()
-
-    url = self.url
-
-    def copy_to_temp(response):
-      import tempfile
-      (fd, path) = tempfile.mkstemp()
-
-      try:
-        fp = os.fdopen(fd, "w")
-        shutil.copyfileobj(response, fp)
-        self.fd_path = path
-      except:
-        os.fdclose(fd)
-        os.remove(path)
-        raise
-        
-      return fp, path
-
-    while True:
-      conn = httplib.HTTPConnection(url.netloc)
-
-      try:
-        conn.putrequest("GET", url.path)
-        conn.putheader("User-Agent", self.user_agent)
-
-        if self.send_version:
-          conn.putheader("X-Pusher-Version", self.version)
-
-        if cookie and self.use_cookies:
-          if url.netloc.endswith(cookie.domain):
-            logger.debug("Sending cookie: {}".format(cookie.coded_value))
-            conn.putheader("Cookie", cookie.coded_value)
-        
-        conn.endheaders()
-        response = conn.getresponse()
-      finally:
-        conn.close()
-
-      loc = response.getheader("location")
-
-      set_cookie = response.getheader("set-cookie")
-
-      if set_cookie and self.use_cookies:
-        cookie = Cookie.SimpleCookie(set_cookie)
-        logger.debug("Setting cookie: {}".format(set_cookie))
-
-      if loc:
-        # parse the redirect location and perform a new request
-        if loc in redirects:
-          raise RuntimeError, "circular redirects"
-        logger.debug("Redirecting to {}".format(loc))
-        url = urlparse.urlparse(loc)
-        redirects.append(loc)
-        continue
-
-      if response.status != 200:
-        raise RuntimeError, "status code is not 200"
-
-      self.actual_url = url
-      self._content_type = response.getheader("content-type")
-
-      if self._content_type:
-        self._content_type = self._content_type.split(";")[0]
-
-      # download the entire file to a local temporary file
-      self.fileobj, self._temp_path = copy_to_temp(response)
-      self.size = self.fileobj.tell()
-      self.fileobj.seek(0)
-      break
+    if self.requested:
+      raise RuntimeError, "already requested url"
 
     self.requested = True
 
-  def getfileobj(self):
-    """
-    return a file object
-    """
+    def copy_to_temp(response):
+      import tempfile
+      import shutil
 
-    if not self.requested:
-      self._request()
+      (td, path) = tempfile.mkstemp()
 
-    if self.fileobj is None:
-      raise RuntimeError, "fileobj is not available"
+      tempfile = os.fdopen(td, "w+")
 
-    return self.fileobj
+      logger.debug("downloading to temporary file {}".format(path))
 
-  def getsize(self):
-    if not self.requested:
-      self._request()
+      try:
+        shutil.copyfileobj(response, tempfile)
+      except:
+        logger.debug("removing temporary file {}".format(path))
+        tempfile.close()
+        os.remove(path)
+        raise
 
-    if self.size is None:
-      raise RuntimeError, "size is not available"
+      return tempfile, path
 
-    return self.size
+    def get_name(url, content_type):
+      import mimetypes
+      mimetypes.init()
 
-  def getname(self):
-    import mimetypes
-    mimetypes.init()
+      name = url.path.split("/")[-1]
 
-    if not self.requested:
-      self._request()
+      ext = mimetypes.guess_extension(content_type)
 
-    if self.actual_url is None:
-      raise RuntimeError, "name is not available"
+      if name == "":
+        name = self.default_name
 
-    name = self.actual_url.path.split("/")[-1]
+      if ext is None or name.endswith(ext):
+        return name
 
-    ext = mimetypes.guess_extension(self._content_type)
+      return name + ext
 
-    if name == "":
-      name = self.default_name
+    def request_redirects(url):
+      import Cookie
+      import httplib
 
-    if ext is None or name.endswith(ext):
-      return name
+      redirects = list()
+      cookie    = None
 
-    return name + ext
+      while True:
+        conn = httplib.HTTPConnection(url.netloc)
 
-  def getmtime(self):
-    import time
-    return time.time()
+        try:
+          conn.putrequest("GET", url.path)
+          conn.putheader("User-Agent", self.user_agent)
+
+          if self.send_version:
+            conn.putheader("X-Pusher-Version", self.version)
+
+          if cookie and self.use_cookies:
+            if url.netloc.endswith(cookie.domain):
+              logger.debug("Sending cookie: {}".format(cookie.coded_value))
+              conn.putheader("Cookie", cookie.coded_value)
+          
+          conn.endheaders()
+          response   = conn.getresponse()
+
+          location   = response.getheader("location")
+          set_cookie = response.getheader("set-cookie")
+
+          if set_cookie and self.use_cookies:
+            cookie = Cookie.SimpleCookie(set_cookie)
+            logger.debug("Setting cookie: {}".format(set_cookie))
+
+          if not location:
+            return url, conn, response
+
+          conn.close()
+
+          # parse the redirect location and perform a new request
+          if location in redirects:
+            raise RuntimeError, "circular redirects"
+
+          logger.debug("Redirecting to {}".format(location))
+          url = urlparse.urlparse(location)
+          redirects.append(location)
+        except:
+          conn.close()
+          raise
+
+    url, conn, response = request_redirects(self.url)
+
+    try:
+      if response.status != 200:
+        raise RuntimeError, "status code is not 200"
+
+      content_type = response.getheader("content-type")
+
+      if content_type:
+        content_type = content_type.split(";", 1)[0]
+
+      # download the entire file to a local temporary file
+      self.fileobj, self.temp = copy_to_temp(response)
+      self.size               = self.fileobj.tell()
+      self.name               = get_name(url, content_type)
+      self.mtime              = time.time()
+
+      self.fileobj.seek(0)
+    finally:
+      conn.close()
 
   def close(self):
     if self.fileobj:
       self.fileobj.close()
-      os.remove(self._temp_path)
+      os.remove(self.temp)
 
     self.fileobj = None
-    self._temp_path = None
-    self.size = None
-
+    self.temp    = None
+    self.size    = None

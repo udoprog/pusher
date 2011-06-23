@@ -6,6 +6,8 @@ logger = logging.getLogger(__name__)
 
 from .components import root_objects
 from .archive import Archive
+from .handles import import_name
+from .utils import TarFile
 
 class PusherEnvironment(object):
   def __init__(self, root_path, config, **kw):
@@ -69,21 +71,30 @@ class PusherEnvironment(object):
       return False
 
     for module in deploy.modules:
-      if not self.archive.contains(module, stage, version):
-        tar = self.archive.new_tar(module, stage, version)
+      name = "{}-{}".format(module.name, version)
 
-        for url in module.geturls(version):
-          print "Downloading into", "{}-{}".format(module.name, version), "from", url.geturl()
+      path = self.archive.module_path(module, stage, version)
 
-          try:
-            tar.download(url)
-          except Exception, e:
-            import sys
-            exc = sys.exc_info()
-            logger.error("Failed to download {}: {}".format(url.geturl(), str(e)))
-            tar.unfinished()
-            raise exc[0], None, exc[2]
+      if self.archive.contains(module, stage, version):
+        print name, "already exists at", path
+        continue
 
+      handles = module.gethandles(version)
+
+      tar  = TarFile(path)
+
+      print name, "new", path
+
+      try:
+        for h in handles:
+          print name, "adding", h.url.geturl()
+          tar.download(h)
+        print name, "saving"
+        tar.commit()
+      except RuntimeError, e:
+        print name, "download failed:", str(e)
+      finally:
+        print name, "closing"
         tar.close()
 
     return True
@@ -388,6 +399,10 @@ def create_env(root, environ, opts):
 
   if "config" in environ:
     config.update(environ["config"])
+
+  if "handles" in config:
+    for name in config.get("handles"):
+      import_name(name)
 
   config.update(os.environ)
 

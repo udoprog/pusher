@@ -22,3 +22,4 @@ pusher/handles/__init__.py
 pusher/handles/base.py
 pusher/handles/file.py
 pusher/handles/http.py
+pusher/handles/sftp.py

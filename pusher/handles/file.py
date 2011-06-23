@@ -4,25 +4,32 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from .base import BaseHandle
+from .base import IHandle
 
-class FileHandle(BaseHandle):
+from zope.interface import implements
+
+class FileHandle:
+  implements(IHandle)
+
   scheme = "file"
 
   def __init__(self, url, version, config):
-    self.url = url
+    self.url     = url
     self.version = version
-    self.config = config
+    self.config  = config
 
-  def getfileobj(self):
-    return file(self.url.path, "r")
+    self.size    = None
+    self.fileobj = None
+    self.name    = None
+    self.mtime   = None
 
-  def getsize(self):
-    return os.path.getsize(self.url.path)
+  def request(self):
+    self.size    = os.path.getsize(self.url.path)
+    self.fileobj = file(self.url.path, "r")
+    self.name    = os.path.basename(self.url.path)
+    self.mtime   = os.stat(self.url.path).st_mtime
 
-  def getname(self):
-    return os.path.basename(self.url.path)
-
-  def getmtime(self):
-    return os.stat(self.url.path).st_mtime
-
+  def close(self):
+    if self.fileobj is not None:
+      self.fileobj.close()
+      self.fileobj = None

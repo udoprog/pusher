@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .base import CompBase, config_format
-from ..handles import all_handles
+from ..handles import find_handle
 from StringIO import StringIO
 
 class Module(CompBase):
@@ -19,30 +19,29 @@ class Module(CompBase):
   revision_path = "revision"
   current_path  = "current"
 
-  handles = all_handles
-
-  def geturls(self, version):
+  def gethandles(self, version):
     import urlparse
-    l = list()
 
     cache = dict(self.config)
     cache["version"] = version
 
-    for url in self.urls:
-      l.append(urlparse.urlparse(config_format(url, cache)))
+    def urls():
+      for url in self.urls:
+        yield urlparse.urlparse(config_format(url, cache))
 
-    return l
+    def handles():
+      # initialize all urls
+      for url in list(urls()):
+        handle = find_handle(url.scheme)
 
-  def open(self, version, url):
-    """
-    Open the url and get a file-like object.
-    """
-    handle = self.handles.get(url.scheme, None)
+        if handle is None:
+          raise RuntimeError, "No handle available for scheme: " + url.scheme
 
-    if handle is None:
-      raise RuntimeError, "No handle available for scheme: " + url.scheme
+        yield handle(url, version, self.config)
 
-    return handle(url, version, self.config)
+    # initialize all handles
+    for h in list(handles()):
+      yield h
 
   def _setup_root(self, server, sftp):
     import yaml

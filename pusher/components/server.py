@@ -51,7 +51,7 @@ class Server(CompBase):
       return self._ssh_connection
 
     logger.debug("Initializing new connection to {}".format(self))
-    self._ssh_connection = SSHClient(self.address, **self.config)
+    self._ssh_connection = SSHClient(self.address, self.config)
     return self._ssh_connection
 
   def close(self):

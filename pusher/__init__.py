@@ -1,12 +1,11 @@
-#
-import os
 import sys
+import os
 import logging
 import getopt
 
-from .environment import create_env
-
 logger = logging.getLogger(__name__)
+
+from .environment import create_env
 
 def exit_usage(env):
   print("Usage: pusher <command>")

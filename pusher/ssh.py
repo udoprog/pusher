@@ -104,6 +104,9 @@ class SFTPClient:
       return False
     
     return stat.S_ISLNK(st.st_mode)
+
+  def mtime(self, path):
+    return self.sftp.stat(path).st_mtime
   
   def rename(self, path, to, safe=False):
     if safe:
@@ -128,7 +131,7 @@ class SFTPClient:
     return self.sftp.normalize(path)
 
 class SSHClient:
-  def __init__(self, ssh_address, **config):
+  def __init__(self, ssh_address, config):
     self.ssh = None
     self.timeout         = config.get("ssh_timeout", 5)
     self.bufsize         = config.get("ssh_bufsize", 2 ** 20)
