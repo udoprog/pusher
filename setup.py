@@ -18,9 +18,13 @@ setup(name='pusher',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-          # -*- Extra requirements: -*-
+        'paramiko',
+        'pyyaml'
       ],
-      entry_points="""
-      # -*- Entry points: -*-
-      """,
+      entry_points={
+        'console_scripts': [
+          'pusher = pusher:entry',
+        ]
+      },
+      
       )

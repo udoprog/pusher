@@ -1,0 +1,148 @@
+from cStringIO import StringIO
+
+import logging
+logger = logging.getLogger(__name__)
+
+import paramiko
+
+class SFTPClient:
+  def __init__(self, sftp):
+    self.sftp = sftp
+
+  def chdir(self, path):
+    self.sftp.chdir(path)
+
+  def mkdir(self, path):
+    logger.info("checking directory: {}".format(path))
+
+    try:
+      st = self.sftp.stat(path)
+    except Exception, e:
+      logger.info("creating directory: {}".format(path))
+      try:
+        self.sftp.mkdir(path)
+      except Exception, e:
+        raise RuntimeError, "Failed to create directory {}: {}".format(path, str(e))
+
+  def upload(self, fp, path):
+    import shutil
+    target = self.sftp.open(path, "w")
+
+    try:
+      shutil.copyfileobj(fp, target)
+    finally:
+      target.close()
+
+  def upload_string(self, s, path):
+    import shutil
+    from cStringIO import StringIO
+    target = self.sftp.open(path, "w")
+
+    try:
+      sio = StringIO(s)
+
+      try:
+        shutil.copyfileobj(sio, target)
+      finally:
+        sio.close()
+    finally:
+      target.close()
+
+  def open(self, path, mode="r"):
+    return self.sftp.open(path, mode)
+
+  def is_file(self, path):
+    import stat
+
+    try:
+      st = self.sftp.stat(path)
+    except:
+      return False
+    
+    return stat.S_ISREG(st.st_mode)
+
+class SSHClient:
+  def __init__(self, ssh_address, **config):
+    self.ssh = None
+    self.check_threshold = config.get("ssh_check_threshold", 5)
+    self.bufsize         = config.get("ssh_bufsize", 2 ** 20)
+    self.io_sleep        = config.get("ssh_io_sleep", 0.1)
+    self.io_sleep_limit  = config.get("ssh_io_sleep_limit", 100)
+
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    kw = dict()
+
+    if "ssh_private_key" in config:
+      private_key = config.get("ssh_private_key")
+
+      try:
+        kw["pkey"] = paramiko.DSSKey.from_private_key_file(private_key)
+      except Exception, e:
+        logger.warning("Could not open private key: {}".format(private_key, str(e)))
+
+    if "ssh_username" in config:
+      kw["username"] = config.get("ssh_username")
+    if "ssh_password" in config:
+      kw["password"] = config.get("ssh_password")
+
+    try:
+      ssh.connect(ssh_address, **kw)
+    except Exception, e:
+      raise RuntimeError, "connect to {} failed: {}".format(ssh_address, str(e))
+
+    self.ssh = ssh
+    self.transport = self.ssh.get_transport()
+
+  def open_sftp(self):
+    import paramiko
+    sftp = paramiko.SFTPClient.from_transport(self.transport)
+    return SFTPClient(sftp)
+
+  def connected(self):
+    return self.ssh != None
+
+  def close(self):
+    self.transport.close()
+    self.ssh.close()
+
+  def run(self, command):
+    import time
+
+    if not self.connected():
+      raise RuntimeError, "not connected"
+
+    logger.debug("getting transport")
+    chan = self.transport.open_session()
+
+    stdout = StringIO()
+    stderr = StringIO()
+    
+    try:
+      chan.settimeout(float(self.check_threshold))
+      chan.exec_command(command + "\n")
+
+      i = 0
+
+      # flush both stdout, stderr and wait for exitcode
+      while not chan.exit_status_ready() or (chan.recv_ready() or chan.recv_stderr_ready()):
+        if chan.recv_ready():
+          stdout.write(chan.recv(self.bufsize))
+          continue
+
+        if chan.recv_stderr_ready():
+          stderr.write(chan.recv_stderr(self.bufsize))
+          continue
+
+        time.sleep(self.io_sleep)
+        if i < self.io_sleep_limit:
+          i += 1
+        else:
+          raise RuntimeError, "ssh_io_sleep_limit reached"
+
+      return chan.recv_exit_status(), stdout.getvalue(), stderr.getvalue()
+    finally:
+      chan.close()
+      stdout.close()
+      stderr.close()
