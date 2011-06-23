@@ -5,6 +5,12 @@ logger = logging.getLogger(__name__)
 
 import paramiko
 
+def _safe_warp(name, func, *args, **kw):
+  try:
+    func(*args, **kw)
+  except Exception, e:
+    logger.error("Failed to execute {}: {}".format(name, str(e)))
+
 class SFTPClient:
   def __init__(self, sftp):
     self.sftp = sftp
@@ -33,20 +39,35 @@ class SFTPClient:
     finally:
       target.close()
 
-  def upload_string(self, s, path):
+  def download(self, fp, path):
     import shutil
-    from cStringIO import StringIO
-    target = self.sftp.open(path, "w")
+    target = self.sftp.open(path, "r")
 
     try:
-      sio = StringIO(s)
-
-      try:
-        shutil.copyfileobj(sio, target)
-      finally:
-        sio.close()
+      shutil.copyfileobj(target, fp)
     finally:
       target.close()
+
+  def upload_string(self, s, path):
+    from cStringIO import StringIO
+    fp = StringIO(s)
+
+    try:
+      self.upload(fp, path)
+    except:
+      fp.close()
+      raise
+
+  def download_string(self, path):
+    from cStringIO import StringIO
+    fp = StringIO()
+
+    try:
+      self.download(fp, path)
+      return fp.getvalue()
+    except:
+      fp.close()
+      raise
 
   def open(self, path, mode="r"):
     return self.sftp.open(path, mode)
@@ -60,6 +81,48 @@ class SFTPClient:
       return False
     
     return stat.S_ISREG(st.st_mode)
+
+  def is_dir(self, path):
+    import stat
+
+    try:
+      st = self.sftp.stat(path)
+    except:
+      return False
+    
+    return stat.S_ISDIR(st.st_mode)
+
+  def is_sym(self, path):
+    import stat
+
+    try:
+      st = self.sftp.lstat(path)
+    except:
+      return False
+    
+    return stat.S_ISLNK(st.st_mode)
+  
+  def rename(self, path, to, safe=False):
+    if safe:
+      _safe_wrap("rename", self.sftp.rename, path, to)
+      return
+    self.sftp.rename(path, to)
+
+  def remove(self, path):
+    self.sftp.remove(path)
+
+  def rmdir(self, path, safe=False):
+    if safe:
+      _safe_wrap("rmdir", self.sftp.rmdir, path)
+      return
+
+    self.sftp.rmdir(path)
+
+  def symlink(self, source, dest):
+    self.sftp.symlink(source, dest)
+
+  def normalize(self, path):
+    return self.sftp.normalize(path)
 
 class SSHClient:
   def __init__(self, ssh_address, **config):
@@ -97,7 +160,7 @@ class SSHClient:
 
   def open_sftp(self):
     import paramiko
-    sftp = paramiko.SFTPClient.from_transport(self.transport)
+    sftp = paramiko.SFTPClient.from_transport(self.ssh.get_transport())
     return SFTPClient(sftp)
 
   def connected(self):

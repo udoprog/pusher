@@ -164,7 +164,7 @@ class PusherEnvironment(object):
     all_ok = True
     for module in deploy.modules:
       if not self.archive.contains(module, stage, version):
-        print "not in archive (run update)", self.archive.module_path(module, stage, version)
+        print "Not in archive (run update)", self.archive.module_path(module, stage, version)
         all_ok = False
 
     if not all_ok:
@@ -173,13 +173,63 @@ class PusherEnvironment(object):
     for server in deploy.servers:
       for module in deploy.modules:
         source = self.archive.open(module, stage, version)
-        print "Deploying {} (version {}) to {}".format(deploy, version, server)
+        print "Deploying {} (version {}) to {}".format(deploy.name, version, server)
 
         try:
-          module.deploy(server, source, deploy, version)
+          module.deploy(server, source, deploy.name, version)
         finally:
           source.close()
 
+    return True
+
+  def CHECKOUT_validate(self, args):
+    if len(args) != 2:
+      raise RuntimeError, "Number of arguments must be exactly 2"
+    if not self.contains(args[0]):
+      raise RuntimeError, "Environment does not contain stage: " + args[0]
+    return args, {}
+
+  def CHECKOUT_run(self, stage, version):
+    """
+    @usage checkout <stage> <version>
+    @short Checkout artifacts for <stage>+<version>, symlinking to 'current'
+    @desc
+    See the pusher.yaml configuration for details.
+    """
+
+    deploy = self.deploys.get(stage, None)
+
+    if not deploy:
+      logger.error("No such stage: " + stage)
+      return False
+
+    previous = list()
+    rollback = False
+
+    print "Downloading rollback states"
+    for server in deploy.servers:
+      for module in deploy.modules:
+        previous.append(((server, module), module.current(server)))
+
+    for server in deploy.servers:
+      for module in deploy.modules:
+        print("Checking out {}-{} on {}".format(deploy.name, version, server))
+        try:
+          module.checkout(server, deploy.name, version)
+        except Exception, e:
+          logger.error("Failed to checkout: {}".format(str(e)))
+          rollback = True
+          break
+
+      if rollback:
+        break
+
+    if rollback:
+      logger.info("Rolling back checkout")
+      for (server, module), (deploy_name, version) in previous:
+        print("Checking out {}-{} on {}".format(deploy_name, version, server))
+        module.checkout(server, deploy_name, version)
+    
     return True
 
   def HELP_validate(self, args):
