@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 from .components import root_objects
 from .archive import Archive
 from .handles import import_name
-from .utils import TarFile
+from .commands import all_commands
 
 class PusherEnvironment(object):
   def __init__(self, root_path, config, **kw):
@@ -23,6 +23,13 @@ class PusherEnvironment(object):
     for klass in root_objects:
       setattr(self, klass.__group__, kw.pop(klass.__group__, {}))
 
+    self.commands = dict()
+
+    for klass in all_commands:
+      inst = klass()
+      inst.setenv(self)
+      self.commands[klass.command.lower()] = inst
+
   def shutdown(self):
     for klass in root_objects:
       for k,v in getattr(self, klass.__group__).items():
@@ -32,315 +39,19 @@ class PusherEnvironment(object):
     for deploy in self.deploys.values():
       deploy.setup(self)
 
-  def list_commands(self):
-    ff = filter(lambda n: n.endswith("_run"), dir(self))
-    return [(c, self.get_help_for(c)) for c in [(n[:-4].lower()) for n in ff]]
-
-  def get_command(self, command):
-    command     = command.strip().upper()
-    run_c       = "{}_run".format(command)
-    validate_c  = "{}_validate".format(command)
-
-    if not hasattr(self, run_c):
-      raise RuntimeError, "no such command: " + command
-
-    if not hasattr(self, validate_c):
-      validator = lambda a: a
-    else:
-      validator = getattr(self, validate_c)
-
-    run = getattr(self, run_c)
-    return validator, run
-
-  def UPDATE_validate(self, args):
-    if len(args) != 2:
-      raise RuntimeError, "Number of arguments must be exactly 2"
-    if not self.contains(args[0]):
-      raise RuntimeError, "Environment does not contain stage: " + args[0]
-    return args, {}
-
-  def UPDATE_run(self, stage, version):
-    """
-    @usage update <stage> <version>
-    @short Download and archive all the specified <stage>+<version>
-    """
-    deploy = self.deploys.get(stage, None)
-
-    if not deploy:
-      logger.error("No such stage: " + stage)
-      return False
-
-    for module in deploy.modules:
-      name = "{}-{}".format(module.name, version)
-
-      path = self.archive.module_path(module, stage, version)
-
-      if self.archive.contains(module, stage, version):
-        print name, "already exists at", path
-        continue
-
-      handles = module.gethandles(version)
-
-      tar  = TarFile(path)
-
-      print name, "new", path
-
-      try:
-        for h in handles:
-          print name, "adding", h.url.geturl()
-          tar.download(h)
-        print name, "saving"
-        tar.commit()
-      except RuntimeError, e:
-        print name, "download failed:", str(e)
-      finally:
-        print name, "closing"
-        tar.close()
-
-    return True
-
-  def CHECK_validate(self, args):
-    if len(args) != 1:
-      raise RuntimeError, "Number of arguments must be exactly 1"
-    if not self.contains(args[0]):
-      raise RuntimeError, "Environment does not contain stage: " + args[0]
-    return args, {}
-
-  def CHECK_run(self, stage):
-    """
-    @usage check <stage>
-    @short Execute all configured checks for a specific <stage>.
-    @desc
-    See the pusher.yaml configuration for details.
-    """
-    deploy = self.deploys.get(stage, None)
-
-    if not deploy:
-      logger.error("No such stage: " + stage)
-      return False
-
-    i = 0
-
-    ok = True
-
-    for server in deploy.servers:
-      for check in deploy.checks:
-        line = "Check #{:03} {}:".format(i, check.name)
-        if server.pretty_run(check.command, line=line) != 0:
-          ok = False
-        i += 1
-
-    return ok
-
-  def DEPLOY_validate(self, args):
-    if len(args) != 2:
-      raise RuntimeError, "Number of arguments must be exactly 2"
-    if not self.contains(args[0]):
-      raise RuntimeError, "Environment does not contain stage: " + args[0]
-    return args, {}
-
-  def DEPLOY_run(self, stage, version):
-    """
-    @usage deploy <stage> <version>
-    @short Deploy artifacts for <stage>+<version>
-    @desc
-    See the pusher.yaml configuration for details.
-    """
-    deploy = self.deploys.get(stage, None)
-
-    if not deploy:
-      logger.error("No such stage: " + stage)
-      return False
-
-    all_ok = True
-
-    for server in deploy.servers:
-      for module in deploy.modules:
-        try:
-          module.check(server)
-        except Exception, e:
-          print "Bad server {}: {}".format(server, str(e))
-          all_ok = False
-
-    for module in deploy.modules:
-      if not self.archive.contains(module, stage, version):
-        print "Not in archive (run update)", self.archive.module_path(module, stage, version)
-        all_ok = False
-
-    if not all_ok:
-      return False
-
-    for server in deploy.servers:
-      for module in deploy.modules:
-        source = self.archive.open(module, stage, version)
-        print "Deploying {} (version {}) to {}".format(deploy.name, version, server)
-
-        try:
-          module.deploy(server, source, deploy.name, version)
-        finally:
-          source.close()
-
-    return True
-
-  def SETUP_validate(self, args):
-    if len(args) != 1:
-      raise RuntimeError, "Number of arguments must be exactly 1"
-    if not self.contains(args[0]):
-      raise RuntimeError, "Environment does not contain stage: " + args[0]
-    return args, {}
-
-  def SETUP_run(self, stage):
-    """
-    @usage setup <stage>
-    @short Setup all servers specified in <stage>
-    @desc
-    """
-    deploy = self.deploys.get(stage, None)
-
-    if not deploy:
-      logger.error("No such stage: " + stage)
-      return False
-
-    for server in deploy.servers:
-      for module in deploy.modules:
-        module.setup(server)
-
-  def CHECKOUT_validate(self, args):
-    if len(args) != 2:
-      raise RuntimeError, "Number of arguments must be exactly 2"
-    if not self.contains(args[0]):
-      raise RuntimeError, "Environment does not contain stage: " + args[0]
-    return args, {}
-
-  def CHECKOUT_run(self, stage, version):
-    """
-    @usage checkout <stage> <version>
-    @short Checkout artifacts for <stage>+<version>, symlinking to 'current'
-    @desc
-    See the pusher.yaml configuration for details.
-    """
-
-    deploy = self.deploys.get(stage, None)
-
-    if not deploy:
-      logger.error("No such stage: " + stage)
-      return False
-
-    all_ok = True
-    for server in deploy.servers:
-      for module in deploy.modules:
-        try:
-          module.check(server)
-        except Exception, e:
-          print "Bad server {}: {}".format(server, str(e))
-          all_ok = False
-
-    if not all_ok:
-      return False
-
-    previous = list()
-    changed = list()
-
-    print "Downloading rollback states"
-
-    for server in deploy.servers:
-      for module in deploy.modules:
-        previous.append(((server, module), module.current(server)))
-        changed.append(False)
-
-    for i, ((server, module), (current_name, current_version)) in enumerate(previous):
-      if "before_checkout" in module.config:
-        print "Triggering", module.name, "{before_checkout} on", server
-        server.pretty_run(module.config["before_checkout"])
-
-    for i, ((server, module), (current_name, current_version)) in enumerate(previous):
-      if current_name == deploy.name and current_version == version:
-        print("Current checkout is already active")
-        continue
-
-      print("Checking out {}-{} on {}".format(deploy.name, version, server))
-
-      try:
-        module.checkout(server, deploy.name, version)
-      except Exception, e:
-        logger.error("Failed to checkout: {}".format(str(e)))
-        break
-
-      changed[i] = True
-
-    try:
-      if all(changed):
-        return True
-
-      print("Rolling back checkout")
-      for i, ((server, module), (deploy_name, version)) in enumerate(previous):
-        if not changed[i]:
-          continue
-
-        print("Reverting back to {}-{} on {}".format(deploy_name, version, server))
-
-        try:
-          module.checkout(server, deploy_name, version)
-        except Exception, e:
-          logger.error("Failed to rollback: {}".format(str(e)))
-
-        changed[i] = False
-
-      if any(changed):
-        print "Could not rollback all changes!!!"
-
-      return False
-    finally:
-      for i, ((server, module), _) in enumerate(previous):
-        if "after_checkout" in module.config:
-          print "Triggering", module.name, "{after_checkout} on", server
-          server.pretty_run(module.config["after_checkout"])
-
-  def HELP_validate(self, args):
-    if len(args) != 1:
-      raise RuntimeError, "Number of arguments must be exactly 1"
-    return args, {}
-
-  def HELP_run(self, command):
-    """
-    @usage help <command>
-    @short Print docs for <command>
-    """
-
-    try:
-      short, usage, docs = self.get_help_for(command)
-    except:
-      print >> sys.stderr, "No such command:", command
-      return False
-
-    print >> sys.stdout, "Usage:", usage
-    print >> sys.stdout, "Short:", short
-    print >> sys.stdout, "\n".join(docs)
-    return True
-
-  def parse_help_for(self, func_doc):
-    short = None
-    usage = None
-    desc = False
-    docs = list()
-
-    for line in func_doc.split("\n"):
-      line = line.strip()
-      if desc:
-        docs.append(line)
-        continue
-      if line.startswith("@usage"): usage = line[7:]
-      if line.startswith("@short"): short = line[7:]
-      if line.startswith("@desc"): desc = True
-
-    return short, usage, docs
-
-  def get_help_for(self, command):
-    _, run = self.get_command(command)
-    return self.parse_help_for(run.func_doc)
-
   def contains(self, stage):
     return stage in self.deploys
+
+  def list_commands(self):
+    return self.commands
+
+  def get_command(self, command):
+    command = self.commands.get(command.lower(), None)
+
+    if command is None:
+      raise RuntimeError, "no such command: " + command
+
+    return command
 
 def validate_config(c):
   def check_type(k, c, vtype):

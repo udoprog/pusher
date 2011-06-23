@@ -6,11 +6,12 @@ import getopt
 logger = logging.getLogger(__name__)
 
 from .environment import create_env
+from .commands import all_commands
 
 def exit_usage(env):
   print("Usage: pusher <command>")
-  for c, (short, usage, _) in sorted(env.list_commands()):
-    print "  {:25}: {}".format(usage, short)
+  for name, command in sorted(env.list_commands().items()):
+    print "  {:25}: {}".format(name, command.short)
   sys.exit(1)
 
 def entry():
@@ -69,25 +70,24 @@ def entry():
   args    = args[1:]
 
   try:
-    validator, run = env.get_command(command)
+    command = env.get_command(command)
   except RuntimeError, e:
     print >> sys.stderr, "Command error: " + str(e)
     exit_usage(env)
 
   try:
-    args, opts = validator(args)
+    command.validate(args)
   except RuntimeError, e:
     print >> sys.stderr, "Invalid arguments: " + str(e)
     print >> sys.stderr, ""
-    short, usage, docs = env.parse_help_for(run.func_doc)
-    print >> sys.stderr, "Usage:", usage
-    print >> sys.stderr, "Short:", short
+    print >> sys.stderr, "Usage:", command.usage
+    print >> sys.stderr, "Short:", command.short
     sys.exit(1)
 
   status = 0
 
   try:
-    if run(*args):
+    if command.execute(*args):
       logger.info("Command Successful")
     else:
       logger.info("Command Failed")

@@ -12,6 +12,14 @@ pusher.egg-info/entry_points.txt
 pusher.egg-info/not-zip-safe
 pusher.egg-info/requires.txt
 pusher.egg-info/top_level.txt
+pusher/commands/__init__.py
+pusher/commands/base.py
+pusher/commands/check.py
+pusher/commands/checkout.py
+pusher/commands/deploy.py
+pusher/commands/help.py
+pusher/commands/setup.py
+pusher/commands/update.py
 pusher/components/__init__.py
 pusher/components/base.py
 pusher/components/check.py
