@@ -6,12 +6,14 @@ logger = logging.getLogger(__name__)
 
 from .base import IHandle
 from .http import HttpHandle
+from .http import HttpsHandle
 from .file import FileHandle
 from .sftp import SftpHandle
 
 all_handles = [
   FileHandle,
   HttpHandle,
+  HttpsHandle,
   SftpHandle,
 ]
 

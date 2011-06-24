@@ -8,39 +8,22 @@ from .base import IHandle
 
 from zope.interface import implements
 
-class HttpHandle:
-  implements(IHandle)
+def create_http_connection(url):
+  import httplib
+  return httplib.HTTPConnection(url.netloc)
 
-  scheme = "http"
+def create_https_connection(url):
+  import httplib
+  return httplib.HTTPSConnection(url.netloc)
 
-  module_version_header = "X-Pusher-Version"
-
-  def __init__(self, url, version, config):
-    self.url          = url
-    self.version      = version
-    self.config       = config
-
-    self.user_agent   = config.get("http_user_agent", "Pusher/2.0")
-    self.use_cookies  = config.get("http_use_cookies", True)
-    self.send_version = config.get("http_send_version", True)
-    self.default_name = config.get("http_default_name", "index")
-
-    self.size         = None
-    self.fileobj      = None
-    self.name         = None
-    self.mtime        = None
-
-    self.requested    = False
-    self.temp         = None
-
-  def request(self):
+def http_request(create_connection):
+  def req(handle):
     import time
-    import urlparse
 
-    if self.requested:
+    if handle.requested:
       raise RuntimeError, "already requested url"
 
-    self.requested = True
+    handle.requested = True
 
     def copy_to_temp(response):
       import tempfile
@@ -71,7 +54,7 @@ class HttpHandle:
       ext = mimetypes.guess_extension(content_type)
 
       if name == "":
-        name = self.default_name
+        name = handle.default_name
 
       if ext is None or name.endswith(ext):
         return name
@@ -80,25 +63,31 @@ class HttpHandle:
 
     def request_redirects(url):
       import Cookie
-      import httplib
+      import urlparse
 
       redirects = list()
       cookie    = None
 
       while True:
-        conn = httplib.HTTPConnection(url.netloc)
+        conn = create_connection(url)
 
         try:
           conn.putrequest("GET", url.path)
-          conn.putheader("User-Agent", self.user_agent)
+          conn.putheader("User-Agent", handle.user_agent)
 
-          if self.send_version:
-            conn.putheader("X-Pusher-Version", self.version)
+          if handle.send_version:
+            conn.putheader("X-Pusher-Version", handle.version)
 
-          if cookie and self.use_cookies:
-            if url.netloc.endswith(cookie.domain):
-              logger.debug("Sending cookie: {}".format(cookie.coded_value))
-              conn.putheader("Cookie", cookie.coded_value)
+          if cookie and handle.use_cookies:
+            for key, item in cookie.items():
+              if "domain" in item and not url.netloc.endswith(item["domain"]):
+                continue
+              
+              if "path" in item and not url.path.startswith(item["path"]):
+                continue
+
+              logger.debug("Sending cookie: {}".format(item.coded_value))
+              conn.putheader("Cookie", item.coded_value)
           
           conn.endheaders()
           response   = conn.getresponse()
@@ -106,9 +95,10 @@ class HttpHandle:
           location   = response.getheader("location")
           set_cookie = response.getheader("set-cookie")
 
-          if set_cookie and self.use_cookies:
-            cookie = Cookie.SimpleCookie(set_cookie)
+          if set_cookie and handle.use_cookies:
             logger.debug("Setting cookie: {}".format(set_cookie))
+            cookie = Cookie.SimpleCookie()
+            cookie.load(set_cookie)
 
           if not location:
             return url, conn, response
@@ -126,7 +116,7 @@ class HttpHandle:
           conn.close()
           raise
 
-    url, conn, response = request_redirects(self.url)
+    url, conn, response = request_redirects(handle.url)
 
     try:
       if response.status != 200:
@@ -138,15 +128,18 @@ class HttpHandle:
         content_type = content_type.split(";", 1)[0]
 
       # download the entire file to a local temporary file
-      self.fileobj, self.temp = copy_to_temp(response)
-      self.size               = self.fileobj.tell()
-      self.name               = get_name(url, content_type)
-      self.mtime              = time.time()
+      handle.fileobj, handle.temp = copy_to_temp(response)
+      handle.size               = handle.fileobj.tell()
+      handle.name               = get_name(url, content_type)
+      handle.mtime              = time.time()
 
-      self.fileobj.seek(0)
+      handle.fileobj.seek(0)
     finally:
       conn.close()
 
+  return req
+
+def http_close():
   def close(self):
     if self.fileobj:
       self.fileobj.close()
@@ -155,3 +148,60 @@ class HttpHandle:
     self.fileobj = None
     self.temp    = None
     self.size    = None
+  return close
+
+class HttpHandle:
+  implements(IHandle)
+
+  scheme = "http"
+
+  module_version_header = "X-Pusher-Version"
+
+  request = http_request(create_http_connection)
+  close   = http_close()
+
+  def __init__(self, url, version, config):
+    self.url          = url
+    self.version      = version
+    self.config       = config
+
+    self.user_agent   = config.get("http_user_agent", "Pusher/2.0")
+    self.use_cookies  = config.get("http_use_cookies", True)
+    self.send_version = config.get("http_send_version", True)
+    self.default_name = config.get("http_default_name", "index")
+
+    self.size         = None
+    self.fileobj      = None
+    self.name         = None
+    self.mtime        = None
+
+    self.requested    = False
+    self.temp         = None
+
+class HttpsHandle(HttpHandle):
+  implements(IHandle)
+
+  scheme = "https"
+
+  module_version_header = "X-Pusher-Version"
+
+  request = http_request(create_https_connection)
+  close   = http_close()
+
+  def __init__(self, url, version, config):
+    self.url          = url
+    self.version      = version
+    self.config       = config
+
+    self.user_agent   = config.get("https_user_agent", "Pusher/2.0")
+    self.use_cookies  = config.get("https_use_cookies", True)
+    self.send_version = config.get("https_send_version", True)
+    self.default_name = config.get("https_default_name", "index")
+
+    self.size         = None
+    self.fileobj      = None
+    self.name         = None
+    self.mtime        = None
+
+    self.requested    = False
+    self.temp         = None
