@@ -19,9 +19,10 @@ def entry():
   Locate pusher.yaml in the current working directory and bootstrap a interactive deploy environment.
   """
   import yaml
+  import json
 
   opts = {
-    "config": os.path.join(os.getcwd(), "pusher.yaml")
+    "config": ["pusher.yaml", "pusher.json"]
   }
 
   try:
@@ -31,22 +32,39 @@ def entry():
     sys.exit(1)
 
   for (o, v) in getopts:
-    if o == "-c": opts["config"] = v
+    if o == "-c": opts["config"] = [v]
     if o == "-l": opts["log_level"] = v
 
-  root = os.path.dirname(opts["config"])
+  config_paths = opts["config"]
+  config_path  = None
+  config_dict  = None
 
-  if not os.path.isfile(opts["config"]):
-    print >> sys.stderr, "Could not find {}".format(opts["config"])
+  for conf in config_paths:
+    path = os.path.join(os.getcwd(), conf)
+
+    if not os.path.isfile(path):
+      continue
+
+    try:
+      if conf.endswith(".yaml"):
+        config_dict = yaml.load(open(path))
+      elif conf.endswith(".json"):
+        config_dict = json.load(open(path))
+      else:
+        print >> sys.stderr, "Unsupported file extension: {}".format(conf)
+        sys.exit(1)
+    except Exception, e:
+      print >> sys.stderr, "Failed to open configuration {}: {}".format(conf, str(e))
+      sys.exit(1)
+
+    config_path = path
+    break
+
+  if not config_dict:
+    print >> sys.stderr, "No configuration found: {}".format(", ".join(config_paths))
     sys.exit(1)
 
-  config_yaml = None
-
-  try:
-    config_dict = yaml.load(open(opts["config"]))
-  except Exception, e:
-    print >> sys.stderr, "Failed to open configuration:", str(e)
-    sys.exit(1)
+  root = os.path.dirname(config_path)
 
   try:
     env = create_env(root, config_dict, opts);
