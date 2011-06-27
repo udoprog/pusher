@@ -181,7 +181,7 @@ Configuration:
 
 Download a file using sftp, uses the normal ssh configuration variables.
 
-ssh-agent and pageant (windows) works automatically through paramiko, so does your normal .ssh/id\_dsa authentication.
+ssh-agent and pageant (windows) works automatically through paramiko, so does your normal *$HOME/.ssh/id\_dsa* authentication.
 
 Configuration:
 
