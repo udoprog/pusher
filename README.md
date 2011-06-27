@@ -77,10 +77,10 @@ Using the above, the following commands deploy the project.
 
 This will create the following directories.
 
-  - /opt/deploy
-  - /opt/deploy/dev
-  - /opt/deploy/dev/revision (empty file)
-  - /opt/deploy/dev/releases/
+* /opt/deploy
+* /opt/deploy/dev
+* /opt/deploy/dev/revision (empty file)
+* /opt/deploy/dev/releases/
 
     #> pusher update dev 1.0
 
@@ -164,14 +164,15 @@ Download the local file, corresponding to the uri.
 
 http/https
 ---
+
 Download a remote file using http, redirects and cookies are handled
 automatically by default.
 
 Configuration:
-  - *(http/https)_user_agent* (default: "Pusher/2.0")
-  - *(http/https)_use_cookies* (default: true)
-  - *(http/https)_send_version* (default: true)
-  - *(http/https)_default_name* (default: "index")
+* *(http/https)_user_agent* (default: "Pusher/2.0")
+* *(http/https)_use_cookies* (default: true)
+* *(http/https)_send_version* (default: true)
+* *(http/https)_default_name* (default: "index")
 
 sftp
 ---
@@ -180,9 +181,9 @@ Download a file using sftp, uses the normal ssh configuration variables.
 ssh-agent and pageant (windows) works automatically through paramiko, so does your normal .ssh/id\_dsa authentication.
 
 Configuration:
-  - *ssh_timeout* (default: 5) 
-  - *ssh_bufsize* (default: 2 ** 20)
-  - *ssh_io_sleep* (default: 0.1)
-  - *ssh_private_key* If private key is made available, is it as an authentication mechanism. Encrypted keys does not work.
-  - *ssh_username*
-  - *ssh_password*
+* *ssh_timeout* (default: 5) 
+* *ssh_bufsize* (default: 2 ** 20)
+* *ssh_io_sleep* (default: 0.1)
+* *ssh_private_key* If private key is made available, is it as an authentication mechanism. Encrypted keys does not work.
+* *ssh_username*
+* *ssh_password*
