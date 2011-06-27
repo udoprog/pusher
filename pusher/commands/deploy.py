@@ -58,6 +58,11 @@ class DeployCommand:
         server_root = server.config.get("server_root")
 
         source = self.env.archive.open(module, stage, version)
+
+        if module.deploy_exists(server, source, deploy.name, version):
+          print "Module {} (version {}-{}) already exists at {}".format(module.name, version, deploy.name, server)
+          continue
+
         print "Deploying module {} (version {}-{}) to {} at {}".format(module.name, version, deploy.name, server, server_root)
 
         try:

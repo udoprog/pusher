@@ -156,6 +156,21 @@ class Module(CompBase):
       return None, None
     return revision_str.split(":", 1)
 
+  def deploy_exists(self, server, source, deploy_name, version):
+    client = server.connect()
+    sftp = client.open_sftp()
+    root = self._setup_root(server, sftp)
+
+    release_path, release_tmp, release_tar = self._setup_paths(version, deploy_name)
+
+    if not sftp.is_file(release_tar):
+      return False
+
+    if not sftp.is_dir(release_path):
+      return False
+
+    return True
+
   def deploy(self, server, source, deploy_name, version):
     client = server.connect()
     sftp = client.open_sftp()
@@ -163,9 +178,18 @@ class Module(CompBase):
 
     release_path, release_tmp, release_tar = self._setup_paths(version, deploy_name)
 
-    if sftp.is_dir(release_path):
+    if sftp.is_file(release_tar) and sftp.is_dir(release_path):
       logger.info("Nothing to deploy, release path exists")
       return
+
+    if sftp.is_dir(release_path):
+      logger.debug("Removing stale release_path")
+      remove_cmd = "cd {} && rm -rf {}".format(root, release_path)
+
+      exitcode, stdout, stderr = client.run(remove_cmd)
+
+      if exitcode != 0:
+        raise RuntimeError, "Failed to remove release_path"
 
     sftp.mkdir(release_tmp)
 
