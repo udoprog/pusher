@@ -144,13 +144,13 @@ Special Variables
 
 There are some special variables available in the configuration file.
 
-* *root* Is the directory in which the pusher.yaml configuration is located,
-  which is very useful for development deploys which are probably built from
-  the directory and not some build server..
-* *version* Is the version currently being deployed, only available where
-  applicable.
-* *stage* Is the stage currently being deployed, only available where
-  applicable.
+ * *root* Is the directory in which the pusher.yaml configuration is located,
+   which is very useful for development deploys which are probably built from
+   the directory and not some build server..
+ * *version* Is the version currently being deployed, only available where
+   applicable.
+ * *stage* Is the stage currently being deployed, only available where
+   applicable.
 
 IHandle
 ===
@@ -169,10 +169,11 @@ Download a remote file using http, redirects and cookies are handled
 automatically by default.
 
 Configuration:
-* *(http/https)_user_agent* (default: "Pusher/2.0")
-* *(http/https)_use_cookies* (default: true)
-* *(http/https)_send_version* (default: true)
-* *(http/https)_default_name* (default: "index")
+
+ * *(http/https)_user_agent* (default: "Pusher/2.0")
+ * *(http/https)_use_cookies* (default: true)
+ * *(http/https)_send_version* (default: true)
+ * *(http/https)_default_name* (default: "index")
 
 sftp
 ---
@@ -181,9 +182,10 @@ Download a file using sftp, uses the normal ssh configuration variables.
 ssh-agent and pageant (windows) works automatically through paramiko, so does your normal .ssh/id\_dsa authentication.
 
 Configuration:
-* *ssh_timeout* (default: 5) 
-* *ssh_bufsize* (default: 2 ** 20)
-* *ssh_io_sleep* (default: 0.1)
-* *ssh_private_key* If private key is made available, is it as an authentication mechanism. Encrypted keys does not work.
-* *ssh_username*
-* *ssh_password*
+
+ * *ssh_timeout* (default: 5) 
+ * *ssh_bufsize* (default: 2 ** 20)
+ * *ssh_io_sleep* (default: 0.1)
+ * *ssh_private_key* If private key is made available, is it as an authentication mechanism. Encrypted keys does not work.
+ * *ssh_username*
+ * *ssh_password*
