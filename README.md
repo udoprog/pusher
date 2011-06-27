@@ -73,7 +73,7 @@ the project directory.
 
 Using the above, the following commands deploy the project.
 
-    #> pusher setup dev
+    sh> pusher setup dev
 
 This will create the following directories.
 
@@ -82,7 +82,7 @@ This will create the following directories.
 * /opt/deploy/dev/revision (empty file)
 * /opt/deploy/dev/releases/
 
-    #> pusher update dev 1.0
+    sh> pusher update dev 1.0
 
 Update the local archive and download the required files for all associated
 modules, prepare version 1.0 for deploy.
@@ -92,7 +92,7 @@ Before the update, the command "build now" is executed.
 This will create a tar file in *{root}.archive/core-local-1.0* that is ready to
 be sent to the server.
 
-    #> pusher deploy dev 1.0
+    sh> pusher deploy dev 1.0
 
 Deploy version 1.0 to the dev environment.
 This will update and create the following directories:
@@ -100,7 +100,7 @@ This will update and create the following directories:
   - /opt/deploy/dev/releases/core-local-1.0.tar
   - /opt/deploy/dev/releases/core-local-1.0/
 
-    #> pusher checkout dev 1.0
+    sh> pusher checkout dev 1.0
 
 Checkout version 1.0 in the deploy environment, this will only change symlinks
 and fire triggers. Rollback is applied if anything is unsuccessful.
