@@ -19,7 +19,7 @@ setup(name='pusher',
       zip_safe=False,
       install_requires=[
         'paramiko',
-        'pyyaml'
+        'pyyaml',
       ],
       entry_points={
         'console_scripts': [

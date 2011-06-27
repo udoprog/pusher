@@ -18,7 +18,6 @@ pusher/commands/check.py
 pusher/commands/checkout.py
 pusher/commands/deploy.py
 pusher/commands/help.py
-pusher/commands/inspect.py
 pusher/commands/setup.py
 pusher/commands/update.py
 pusher/components/__init__.py
