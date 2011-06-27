@@ -77,10 +77,10 @@ Using the above, the following commands deploy the project.
 
 This will create the following directories.
 
-* /opt/deploy
-* /opt/deploy/dev
-* /opt/deploy/dev/revision (empty file)
-* /opt/deploy/dev/releases/
+ * /opt/deploy
+ * /opt/deploy/dev
+ * /opt/deploy/dev/revision (empty file)
+ * /opt/deploy/dev/releases/
 
     sh> pusher update dev 1.0
 
@@ -97,8 +97,8 @@ be sent to the server.
 Deploy version 1.0 to the dev environment.
 This will update and create the following directories:
 
-  - /opt/deploy/dev/releases/core-local-1.0.tar
-  - /opt/deploy/dev/releases/core-local-1.0/
+ * /opt/deploy/dev/releases/core-local-1.0.tar
+ * /opt/deploy/dev/releases/core-local-1.0/
 
     sh> pusher checkout dev 1.0
 
