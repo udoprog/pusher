@@ -138,6 +138,8 @@ the project directory.
           - "sftp://resources.dev.local/usr/local/share/resource.txt"
           - "https://example.com/"
 
+    checks: {}
+
     deploys:
       dev:
         servers: [s1, s2]
