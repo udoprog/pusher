@@ -81,7 +81,6 @@ Setup basic configuration.
     Downloading rollback states
     Checking out module quick (version dev-1.0) on 127.0.0.1 (s1)
 
-
 This will have created the following structure under /opt/quickstart.
 
     /opt/quickstart/
