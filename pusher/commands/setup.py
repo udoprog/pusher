@@ -37,4 +37,7 @@ class SetupCommand:
 
     for server in deploy.servers:
       for module in deploy.modules:
+        print "Setting up module", module.name, "at", server
         module.setup(server)
+
+    return True

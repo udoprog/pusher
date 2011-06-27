@@ -67,7 +67,7 @@ class CheckoutCommand:
         print("Current checkout is already active")
         continue
 
-      print("Checking out {}-{} on {}".format(deploy.name, version, server))
+      print("Checking out module {} (version {}-{}) on {}".format(module.name, deploy.name, version, server))
 
       try:
         module.checkout(server, deploy.name, version)
@@ -86,7 +86,7 @@ class CheckoutCommand:
         if not changed[i]:
           continue
 
-        print("Reverting back to {}-{} on {}".format(deploy_name, version, server))
+        print("Reverting back to  module {} (version {}-{}) on {}".format(module.name, deploy_name, version, server))
 
         try:
           module.checkout(server, deploy_name, version)

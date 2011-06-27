@@ -26,6 +26,74 @@ Pusher depends on.
 These should be installed using setup.py, but you never know with the different
 types of setup available.
 
+QuickStart
+===
+Given the following configuration:
+
+    servers:
+      s1:
+        address: "127.0.0.1"
+        server_root: "/opt/quickstart"
+
+    modules:
+      quick:
+        urls:
+          - "file://{root}/quickstart.txt"
+
+    deploys:
+      dev:
+        servers: [s1]
+        modules: [quick]
+        checks: []
+
+    checks: {}
+
+    config:
+      log_level: ERROR
+      ssh_username: "myuser"
+      ssh_password: "mypassword"
+
+run.
+
+Create the deploy repo.
+
+    sh> sudo mkdir /opt/quickstart; sudo chown myuser /opt/quickstart
+
+Setup basic configuration.
+
+    sh> pusher setup dev
+
+    Setting up module quick at 127.0.0.1 (s1)
+
+    sh> pusher update dev 1.0
+
+    quick-1.0 new /home/udoprog/repo/git/pusher/.archive/1.0-dev-quick
+    quick-1.0 adding file:///home/udoprog/repo/git/pusher/quickstart.txt
+    quick-1.0 saving
+    quick-1.0 closing
+
+    sh> pusher deploy dev 1.0
+
+    Deploying module quick (version 1.0-dev) to 127.0.0.1 (s1) at /opt/quickstart
+
+    sh> pusher checkout dev 1.0
+
+    Downloading rollback states
+    Checking out module quick (version dev-1.0) on 127.0.0.1 (s1)
+
+
+This will have created the following structure under /opt/quickstart.
+
+    /opt/quickstart/
+    /opt/quickstart/quick
+    /opt/quickstart/quick/current -> releases/1.0-dev
+    /opt/quickstart/quick/releases
+    /opt/quickstart/quick/releases/1.0-dev.tar
+    /opt/quickstart/quick/releases/1.0-dev
+    /opt/quickstart/quick/releases/1.0-dev/quickstart.txt
+    /opt/quickstart/quick/revision
+    /opt/quickstart/.pusher
+
 Configuration
 ===
 

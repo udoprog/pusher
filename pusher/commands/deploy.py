@@ -55,8 +55,10 @@ class DeployCommand:
 
     for server in deploy.servers:
       for module in deploy.modules:
+        server_root = server.config.get("server_root")
+
         source = self.env.archive.open(module, stage, version)
-        print "Deploying {} (version {}) to {}".format(deploy.name, version, server)
+        print "Deploying module {} (version {}-{}) to {} at {}".format(module.name, version, deploy.name, server, server_root)
 
         try:
           module.deploy(server, source, deploy.name, version)

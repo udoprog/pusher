@@ -111,6 +111,7 @@ class Module(CompBase):
     logger.info("Uploading revision string")
     revision_str = "{}:{}".format(deploy_name, version)
     sftp.upload_string(revision_str, self.revision_path)
+    sftp.symlink(release_path, self.current_path)
 
   def current(self, server):
     client = server.connect()
@@ -121,6 +122,8 @@ class Module(CompBase):
       return None, None
 
     revision_str = sftp.download_string(self.revision_path)
+    if not ":" in revision_str:
+      return None, None
     return revision_str.split(":", 1)
 
   def deploy(self, server, source, deploy_name, version):

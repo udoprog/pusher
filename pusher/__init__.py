@@ -78,7 +78,7 @@ def entry():
     print >> sys.stderr, "no such log level: " + log_level
     sys.exit(1);
 
-  f="%(asctime)s - %(name)-20s - %(levelname)-7s - %(message)s"
+  f="%(asctime)s - %(name)-30s - %(levelname)-7s - %(message)s"
   logging.basicConfig(level=getattr(logging, log_level), format=f)
 
   if len(args) < 1:
