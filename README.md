@@ -80,8 +80,7 @@ This will create the following directories.
  * /opt/deploy
  * /opt/deploy/dev
  * /opt/deploy/dev/revision (empty file)
- * /opt/deploy/dev/releases/
-
+ * /opt/deploy/dev/releases (empty directory)
 
     sh> pusher update dev 1.0
 
