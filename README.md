@@ -36,40 +36,18 @@ the project directory.
         before_update: "build now"
         after_checkout: "/etc/init.d/service restart"
 
-        # multiple source types can be used, these depend on specific
-        # configuration variables
         urls:
           - "file://{root}/module/build/deploy.zip"
           - "sftp://resources.dev.local/usr/local/share/resource.txt"
           - "https://example.com/"
 
-    checks:
-      Deploy:
-        command: "test -d /opt/deploy"
-      FindUser:
-        command: "grep '^{FindUser}:' /etc/passwd > /dev/null"
-
     deploys:
       dev:
-        servers:
-          - s1
-          - s2
-        modules:
-          - core-local
-        checks:
-          - Deploy
-          - FindUser
+        servers: [s1, s2]
+        modules: [core-local]
 
     config:
-      ssh_private_key: "{HOME}/.ssh/id_dsa"
-      FindUser: "example"
       log_level: ERROR
-
-      # extra handles
-      # this is used by default, but anything derigin pusher.handles.base#IHandle
-      can be used
-      handles:
-        - pusher.handles.file#FileHandle
 
 Using the above, the following commands deploy the project.
 
@@ -93,7 +71,7 @@ modules, prepare version 1.0 for deploy.
 
 Before the update, the command "build now" is executed.
 
-This will create a tar file in *{root}.archive/core-local-1.0* that is ready to
+This will create a tar file in *{root}/.archive/core-local-1.0* that is ready to
 be sent to the server.
 
 **Deploy**
@@ -121,7 +99,7 @@ checked out).
 
 Done!
 
-Variables
+About the format
 ===
 
 Most fields can use standard python formatting placeholders, i.e. *{name}*.
@@ -135,7 +113,7 @@ is a valid server definition:
       s1:
         address: "{name}"
 
-Recursion can never occur since the dictionary used for formatting is always
+**Recursion can never happen** since the dictionary used for formatting is always
 a copy of the source, meaning that the following will not work as expected:
 
     servers:
@@ -146,6 +124,19 @@ a copy of the source, meaning that the following will not work as expected:
 
 *address* would simply be expanded to _dev.local.{domain}_, this might be fixed
 in the future.
+
+**Variables are scoped**, variables defined under *root > config* will be
+globally available for all components (servers/modules/checks), but variables
+can also be defined in each separate component definition.
+
+**The schema validates on dictionaries**, meaning that any serialization format
+should be acceptable as input for pusher, as long as it can be gracefully
+converted into a python dict and supports usual types such as booleans, lists
+and string.
+
+**Everything can be configured**, as long as it's documented :-), seriously,
+most functions are configurable, adding new commands and handles is dead
+simple, just check out the IHandle and ICommand (zope) interfaces.
 
 Special Variables
 ---
