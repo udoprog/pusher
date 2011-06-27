@@ -51,7 +51,7 @@ class PusherConfig:
       return True
     if self.parent:
       return key in self.parent
-    return True
+    return False
 
   def __iter__(self):
     for k in sorted(self.params.keys()):
