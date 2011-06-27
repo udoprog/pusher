@@ -5,11 +5,25 @@ Pusher is a simple project manage project deployment into a big environment.
 the only requirement on the deployed to servers are ssh with sftp enabled and tar.
 
 It creates a document structure on the remote server similar to capistrano, but
-should be extendible to any type of project requiring deploy to an upstream
-server.
+should be extendible to any type of project requiring deployment to one or many
+different kinds of servers and environments.
 
-The compact syntax is also suitable to bundle with the project, given that it
-only occupies one file.
+The compact syntax is also suitable to bundle with the project, since the
+descriptor only uses one file.
+
+Install
+===
+
+    sh> sudo python setup.py install
+
+Pusher depends on.
+
+ * Paramiko
+   - python-crypto
+ * pyyaml
+
+These should be installed using setup.py, but you never know with the different
+types of setup available.
 
 Configuration
 ===
