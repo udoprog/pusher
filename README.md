@@ -82,6 +82,7 @@ This will create the following directories.
  * /opt/deploy/dev/revision (empty file)
  * /opt/deploy/dev/releases/
 
+
     sh> pusher update dev 1.0
 
 Update the local archive and download the required files for all associated
