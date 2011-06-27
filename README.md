@@ -71,8 +71,14 @@ modules, prepare version 1.0 for deploy.
 
 Before the update, the command "build now" is executed.
 
-This will create a tar file in *{root}/.archive/core-local-1.0* that is ready to
-be sent to the server.
+This will create a tar file in *{root}/.archive/core-local-1.0* that contains the following.
+
+ * deploy.zip *downloaded from* "file://{root}/module/build/deploy.zip"
+ * resource.txt *downloaded from* "sftp://resources.dev.local/usr/local/share/resource.txt"
+ * index.html *downloaded from* "https://example.com/"
+
+*Note: even local file copies are called "downloads" since handle types are not
+distinguished.*
 
 **Deploy**
 
