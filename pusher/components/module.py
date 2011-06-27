@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from .base import CompBase, config_format
+from .base import CompBase
 from ..handles import find_handle
 from StringIO import StringIO
 
@@ -13,7 +13,6 @@ class Module(CompBase):
   __keys__ = {
     "urls": list,
   }
-  __noformat__ = set(["url"])
 
   releases_path = "releases"
   revision_path = "revision"
@@ -22,12 +21,11 @@ class Module(CompBase):
   def gethandles(self, version):
     import urlparse
 
-    cache = dict(self.config)
-    cache["version"] = version
+    config = self.config.sub(version=version)
 
     def urls():
-      for url in self.urls:
-        yield urlparse.urlparse(config_format(url, cache))
+      for url in config.get("urls"):
+        yield urlparse.urlparse(url)
 
     def handles():
       # initialize all urls

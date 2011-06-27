@@ -60,7 +60,7 @@ class CheckoutCommand:
     for i, ((server, module), (current_name, current_version)) in enumerate(previous):
       if "before_checkout" in module.config:
         print "Triggering", module.name, "{before_checkout} on", server
-        server.pretty_run(module.config["before_checkout"])
+        server.pretty_run(module.config.get("before_checkout"))
 
     for i, ((server, module), (current_name, current_version)) in enumerate(previous):
       if current_name == deploy.name and current_version == version:
@@ -103,4 +103,4 @@ class CheckoutCommand:
       for i, ((server, module), _) in enumerate(previous):
         if "after_checkout" in module.config:
           print "Triggering", module.name, "{after_checkout} on", server
-          server.pretty_run(module.config["after_checkout"])
+          server.pretty_run(module.config.get("after_checkout"))

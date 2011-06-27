@@ -9,8 +9,52 @@ from .archive import Archive
 from .handles import import_name
 from .commands import all_commands
 
+class PusherConfig:
+  def __init__(self, params={}, parent=None):
+    self.params = params
+    self.parent = parent
+
+  def sub(self, **params):
+    p = dict(self.params)
+    p.update(params)
+    return PusherConfig(p, parent=self)
+
+  def get(self, key, default=None, params=None):
+    def config_format(s, params):
+      if isinstance(s, list):
+        return [config_format(r, params) for r in s]
+
+      if not isinstance(s, basestring):
+        return s
+
+      try:
+        return s.format(**params)
+      except KeyError, e:
+        raise RuntimeError, "format failed for key: " + str(e)
+
+    if params is None:
+      params = self.params
+
+    if key in self.params:
+      return config_format(self.params.get(key), params)
+
+    if self.parent:
+      return self.parent.get(key, default, params)
+
+    if default is not None:
+      return config_format(default, params)
+
+    raise KeyError(key)
+
+  def __contains__(self, key):
+    if key in self.params:
+      return True
+    if self.parent:
+      return key in self.parent
+    return True
+
 class PusherEnvironment(object):
-  def __init__(self, root_path, config, **kw):
+  def __init__(self, root_path, config):
     """
     Initialize the environment with each specific amount of servers and modules.
     """
@@ -20,15 +64,15 @@ class PusherEnvironment(object):
     self.archive = Archive(self, config.get("archive", ".archive"))
     self.archive.create()
 
-    for klass in root_objects:
-      setattr(self, klass.__group__, kw.pop(klass.__group__, {}))
-
     self.commands = dict()
 
     for klass in all_commands:
       inst = klass()
       inst.setenv(self)
       self.commands[klass.command.lower()] = inst
+
+  def run(self, command):
+    return os.system(command)
 
   def shutdown(self):
     for klass in root_objects:
@@ -87,17 +131,13 @@ def validate_config(c):
   for klass in root_objects:
     each_key(c, klass.__group__, lambda c: valid_component(c, klass))
 
-def create_components(environ, config, klass):
-  comps = dict()
+def create_components(env, environ, klass):
+  comps = list()
   for k,v in environ[klass.__group__].items():
-    pconf = dict(config)
-    pconf["name"] = k
-    pconf.update(v)
-    comp = klass(pconf)
-    for attr in klass.__keys__.keys():
-      val = v.get(attr, None)
-      comp.set_attr(attr, val)
-    comps[k] = comp
+    cc = dict(name=k)
+    for sk,sv in v.items():
+      cc[sk] = sv
+    comps.append(klass(env.config.sub(**cc)))
   return comps
 
 def create_env(root, environ, opts):
@@ -121,18 +161,13 @@ def create_env(root, environ, opts):
   config["cwd"] = os.getcwd()
 
   config.update(opts)
-  cache = dict(config)
 
-  for k in config:
-    if isinstance(config[k], basestring):
-      config[k] = config[k].format(**cache)
-
-  objects = dict()
+  env = PusherEnvironment(root, PusherConfig(config))
   
   for klass in root_objects:
-    objects[klass.__group__] = create_components(environ, config, klass)
-
-  env = PusherEnvironment(root, config, **objects)
+    comps = create_components(env, environ, klass)
+    m = dict([(c.name, c) for c in comps])
+    setattr(env, klass.__group__, m)
 
   try:
     env.setup()

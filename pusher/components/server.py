@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from .base import CompBase, config_format
+from .base import CompBase
 from ..ssh import SSHClient
 
 class Server(CompBase):

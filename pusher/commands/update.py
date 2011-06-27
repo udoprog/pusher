@@ -44,7 +44,12 @@ class UpdateCommand:
         print name, "already exists at", path
         continue
 
-      handles = module.gethandles(version)
+      handles = list(module.gethandles(version))
+
+      if "before_update" in module.config:
+        for h in handles:
+          config = module.config.sub(url=h.url.geturl())
+          self.env.run(config.get("before_update"))
 
       tar  = TarFile(path)
 
