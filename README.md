@@ -45,7 +45,7 @@ Given the following configuration:
 
     deploys:
       dev:
-        servers: [s1]
+        servers: [s1, s2]
         modules: [quick]
         checks: []
 
