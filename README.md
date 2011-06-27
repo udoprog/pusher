@@ -56,8 +56,6 @@ Given the following configuration:
       ssh_username: "myuser"
       ssh_password: "mypassword"
 
-run.
-
 Create the deploy location.
 
     sh> sudo mkdir /opt/quickstart
