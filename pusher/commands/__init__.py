@@ -7,6 +7,7 @@ from .deploy import DeployCommand
 from .help import HelpCommand
 from .setup import SetupCommand
 from .update import UpdateCommand
+from .inspect import InspectCommand
 
 all_commands = [
   CheckCommand,
@@ -15,6 +16,7 @@ all_commands = [
   HelpCommand,
   SetupCommand,
   UpdateCommand,
+  InspectCommand,
 ]
 
 __all__ = ["all_commands"]

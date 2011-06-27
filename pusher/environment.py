@@ -30,7 +30,7 @@ class PusherConfig:
       try:
         return s.format(**params)
       except KeyError, e:
-        raise RuntimeError, "format failed for key: " + str(e)
+        raise RuntimeError, "missing configuration key: " + str(e)
 
     if params is None:
       params = self.params
@@ -52,6 +52,10 @@ class PusherConfig:
     if self.parent:
       return key in self.parent
     return True
+
+  def __iter__(self):
+    for k in sorted(self.params.keys()):
+      yield k
 
 class PusherEnvironment(object):
   def __init__(self, root_path, config):
