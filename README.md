@@ -94,7 +94,7 @@ and fire triggers. Rollback is applied if anything is unsuccessful.
 This will create a symlink to current (or re-create one if something is already
 checked out).
 
-  - /opt/deploy/dev/current -> /opt/deplot/dev/releases/core-local-1.0/
+  - /opt/deploy/dev/current -> /opt/deploy/dev/releases/core-local-1.0/
   - /opt/deploy/dev/revision (contains "1.0")
 
 Done!
@@ -155,14 +155,17 @@ IHandle
 ===
 
 The interface that each type of scheme implements is the IHandle interface.
-Pusher comes bundled with handles for the following schemes.
 
-file
----
+File sources are specified as **urls** under the module component, they have
+the format **<scheme>**://**netloc**/**path**.
+
+Pusher comes with a couple of bundles handles for the following schemes.
+
+**file**
+
 Download the local file, corresponding to the uri.
 
-http/https
----
+**http/https**
 
 Download a remote file using http, redirects and cookies are handled
 automatically by default.
@@ -174,8 +177,8 @@ Configuration:
  * *(http/https)_send_version* (default: true)
  * *(http/https)_default_name* (default: "index")
 
-sftp
----
+**sftp**
+
 Download a file using sftp, uses the normal ssh configuration variables.
 
 ssh-agent and pageant (windows) works automatically through paramiko, so does your normal .ssh/id\_dsa authentication.
