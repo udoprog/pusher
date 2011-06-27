@@ -177,7 +177,7 @@ Handles
 The interface that each type of scheme implements is the IHandle interface.
 
 File sources are specified as **urls** under the module component, they have
-the format **<scheme>**://**netloc**/**path**.
+the format **\<scheme\>**://**\<netloc\>**/**\<path\>**.
 
 Pusher comes with a couple of bundles handles for the following schemes.
 
