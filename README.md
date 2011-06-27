@@ -11,7 +11,8 @@ The main configuration file for pusher is the "pusher.yaml" file, it describes
 how to collect all resources which are to be deployed, and where they are to
 be uploaded.
 
-The following is an example configuration:
+The following is an example configuration which is located at *pusher.yaml* in
+the project directory.
 
     archive: .archive
 
@@ -78,3 +79,42 @@ and fire triggers. Rollback is applied if anything is unsuccessful.
     #> pusher checkout dev 1.0
 
 Done!
+
+Variables
+===
+
+Most fields can use standard python formatting placeholders, i.e. *{name}*.
+By default, the current environment is loaded into this configuration, along
+with anything specified under *config* and on each separate module.
+
+All dictionary keys are automatically defined as *name*, meaning the following
+is a valid server definition:
+
+    servers:
+      s1:
+        address: "{name}"
+
+Recursion can never occur since the dictionary used for formatting is always
+a copy of the source, meaning that the following will not work as expected:
+
+    servers:
+      s1:
+        address: "dev.{network}"
+        network: "local.{domain}"
+        domain: "example.com"
+
+*address* would simply be expanded to _dev.local.{domain}_, this might be fixed
+in the future.
+
+Special Variables
+---
+
+There are some special variables available in the configuration file.
+
+* *root* Is the directory in which the pusher.yaml configuration is located,
+  which is very useful for development deploys which are probably built from
+  the directory and not some build server..
+* *version* Is the version currently being deployed, only available where
+  applicable.
+* *stage* Is the stage currently being deployed, only available where
+  applicable.
