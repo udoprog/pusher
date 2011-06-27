@@ -33,7 +33,10 @@ Given the following configuration:
     servers:
       s1:
         address: "127.0.0.1"
-        server_root: "/opt/quickstart"
+        server_root: "/opt/quickstart/one"
+      s2:
+        address: "127.0.0.2"
+        server_root: "/opt/quickstart/two"
 
     modules:
       quick:
@@ -57,7 +60,8 @@ run.
 
 Create the deploy location.
 
-    sh> sudo mkdir /opt/quickstart; sudo chown myuser /opt/quickstart
+    sh> sudo mkdir /opt/quickstart
+    sh> sudo chown myuser /opt/quickstart
 
 Add the quickstart.txt that will be deployed.
 
@@ -78,24 +82,33 @@ Run the different steps of pusher.
 
     sh> pusher deploy dev 1.0
 
-    Deploying module quick (version 1.0-dev) to 127.0.0.1 (s1) at /opt/quickstart
+    Deploying module quick (version 1.0-dev) to 127.0.0.1 (s1) at /opt/quickstart/one
+    Deploying module quick (version 1.0-dev) to 127.0.0.2 (s2) at /opt/quickstart/two
 
     sh> pusher checkout dev 1.0
 
     Downloading rollback states
     Checking out module quick (version dev-1.0) on 127.0.0.1 (s1)
+    Checking out module quick (version dev-1.0) on 127.0.0.2 (s2)
 
 This will have created the following structure under /opt/quickstart.
 
-    /opt/quickstart/
-    /opt/quickstart/quick
-    /opt/quickstart/quick/current -> releases/1.0-dev
-    /opt/quickstart/quick/releases
-    /opt/quickstart/quick/releases/1.0-dev.tar
-    /opt/quickstart/quick/releases/1.0-dev
-    /opt/quickstart/quick/releases/1.0-dev/quickstart.txt
-    /opt/quickstart/quick/revision
-    /opt/quickstart/.pusher
+    two/
+    two/quick
+    two/quick/releases
+    two/quick/releases/1.0-dev.tar
+    two/quick/releases/1.0-dev/
+    two/quick/releases/1.0-dev/quickstart.txt
+    one/quick/current -> releases/1.0-dev
+    two/quick/revision
+    one/
+    one/quick
+    one/quick/releases
+    one/quick/releases/1.0-dev.tar
+    one/quick/releases/1.0-dev/
+    one/quick/releases/1.0-dev/quickstart.txt
+    one/quick/current -> releases/1.0-dev
+    one/quick/revision
 
 Configuration
 ===
