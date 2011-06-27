@@ -36,8 +36,14 @@ class SetupCommand:
       return False
 
     for server in deploy.servers:
+      server_root = server.config.get("server_root")
+
       for module in deploy.modules:
-        print "Setting up module", module.name, "at", server
+        if module.exists(server):
+          print "Module", module.name, "already exists at", server, "in", server_root
+          continue
+
+        print "Setting up module", module.name, "at", server, "in", server_root
         module.setup(server)
 
     return True

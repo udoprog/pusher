@@ -55,15 +55,19 @@ Given the following configuration:
 
 run.
 
-Create the deploy repo.
+Create the deploy location.
 
     sh> sudo mkdir /opt/quickstart; sudo chown myuser /opt/quickstart
 
-Setup basic configuration.
+Add the quickstart.txt that will be deployed.
+
+    sh> echo "Hello World" > quickstart.txt
+
+Run the different steps of pusher.
 
     sh> pusher setup dev
 
-    Setting up module quick at 127.0.0.1 (s1)
+    Module quick already exists at 127.0.0.1 (s1) in /opt/quickstart
 
     sh> pusher update dev 1.0
 

@@ -82,6 +82,36 @@ class Module(CompBase):
     if not sftp.is_file(server_check):
       sftp.touch(server_check)
 
+    deploy_root = self._setup_root(server, sftp)
+
+  def exists(self, server):
+    client = server.connect()
+    sftp = client.open_sftp()
+
+    if not sftp.is_dir(server.server_root):
+      logger.debug("Missing: {}".format(server.server_root))
+      return False
+
+    server_check = "{}/{}".format(server.server_root, server.server_check)
+
+    if not sftp.is_file(server_check):
+      logger.debug("Missing: {}".format(server_check))
+      return False
+
+    deploy_root = os.path.join(server.server_root, self.name)
+
+    if not sftp.is_dir(deploy_root):
+      logger.debug("Missing: {}".format(deploy_root))
+      return False
+
+    sftp.chdir(deploy_root)
+
+    if not sftp.is_dir(self.releases_path):
+      logger.debug("Missing: {}".format(self.releases_path))
+      return False
+
+    return True
+
   def checkout(self, server, deploy_name, version):
     client = server.connect()
     sftp = client.open_sftp()
