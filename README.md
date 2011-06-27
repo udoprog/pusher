@@ -157,7 +157,7 @@ There are some special variables available in the configuration file.
  * *stage* Is the stage currently being deployed, only available where
    applicable.
 
-IHandle
+Handles
 ===
 
 The interface that each type of scheme implements is the IHandle interface.
