@@ -62,19 +62,19 @@ The following is an example configuration:
 Using the above, the following command series will build and deploy the
 project.
 
-  #> pusher setup dev
+    #> pusher setup dev
 
 Update the local archive, prepare version 1.0 for deploy.
 
-  #> pusher update dev 1.0
+    #> pusher update dev 1.0
 
 Deploy version 1.0 to the dev environment.
 
-  #> pusher deploy dev 1.0
+    #> pusher deploy dev 1.0
 
 Checkout version 1.0 in the deploy environment, this will only change symlinks
 and fire triggers. Rollback is applied if anything is unsuccessful.
 
-  #> pusher checkout dev 1.0
+    #> pusher checkout dev 1.0
 
 Done!
