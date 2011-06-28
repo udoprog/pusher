@@ -105,35 +105,38 @@ def validate_config(c):
   def check_type(k, c, vtype):
     if k not in c:
       raise RuntimeError, "{}: missing key".format(k)
-    rtype = type(c[k])
-    if not isinstance(c[k], vtype):
+    vv = c.get(k)
+    rtype = type(vv)
+    if not isinstance(vv, vtype):
       raise RuntimeError, "{}: should be '{}' but is '{}'".format(k, vtype.__name__, rtype.__name__)
 
-  def valid_keys(c, vtype, *keys):
-    for k in keys:
-      check_type(k, c, vtype)
-
   def valid_component(c, klass):
-    if type(c) != dict:
-      raise RuntimeError, "type is not 'dict'"
-
     for k, vtype in klass.__keys__.items():
       check_type(k, c, vtype)
 
   def each_key(conf, name, func):
-    for i, (k, v) in enumerate(conf[name].items()):
+    for i, (k, v) in enumerate(conf.get(name).items()):
       if v is None:
         raise RuntimeError, ("{}#{} \"{}\": value is null".format(name, i, k))
 
+      if type(v) != dict:
+        raise RuntimeError, "type is not 'dict'"
+
+      subc = conf.sub(**v)
+
       try:
-        func(v)
+        func(subc)
       except RuntimeError, e:
         raise RuntimeError, ("{}#{} \"{}\": {}".format(name, i, k, str(e)))
 
-  valid_keys(c, dict, *[k.__group__ for k in root_objects])
+  for k in root_objects:
+    check_type(k.__group__, c, dict)
 
   for klass in root_objects:
-    each_key(c, klass.__group__, lambda c: valid_component(c, klass))
+    try:
+      each_key(c, klass.__group__, lambda c: valid_component(c, klass))
+    except RuntimeError, e:
+      raise RuntimeError, "root: {}: {}".format(klass.__group__, str(e))
 
 def create_components(env, environ, klass):
   comps = list()
@@ -145,12 +148,7 @@ def create_components(env, environ, klass):
   return comps
 
 def create_env(root, environ, opts):
-  try:
-    validate_config(environ)
-  except RuntimeError, e:
-    raise RuntimeError, "Invalid schema: "+ str(e)
-
-  config = dict()
+  config = dict(environ)
 
   if "config" in environ:
     config.update(environ["config"])
@@ -166,7 +164,14 @@ def create_env(root, environ, opts):
 
   config.update(opts)
 
-  env = PusherEnvironment(root, PusherConfig(config))
+  config = PusherConfig(config)
+
+  try:
+    validate_config(config)
+  except RuntimeError, e:
+    raise RuntimeError, "Invalid schema: "+ str(e)
+
+  env = PusherEnvironment(root, config)
   
   for klass in root_objects:
     comps = create_components(env, environ, klass)
