@@ -63,11 +63,14 @@ class CheckoutCommand:
         server.pretty_run(module.config.get("before_checkout"))
 
     for i, ((server, module), (current_name, current_version)) in enumerate(previous):
+      name="{} (version {}-{}) on {}".format(module.name, deploy.name, version, server)
+
       if current_name == deploy.name and current_version == version:
-        print("Current checkout is already active")
+        print("{}: {}".format(name, "Already checked out"))
+        changed[i] = True
         continue
 
-      print("Checking out module {} (version {}-{}) on {}".format(module.name, deploy.name, version, server))
+      print("{}: {}".format(name, "Checking out"))
 
       try:
         module.checkout(server, deploy.name, version)

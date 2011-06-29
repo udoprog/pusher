@@ -146,6 +146,8 @@ class SSHClient:
     if "ssh_private_key" in config:
       private_key = config.get("ssh_private_key")
 
+      logger.info("Using private key: {}".format(private_key))
+
       try:
         kw["pkey"] = paramiko.DSSKey.from_private_key_file(private_key)
       except Exception, e:
