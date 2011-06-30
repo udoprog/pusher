@@ -5,9 +5,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 class CompBase(object):
+  "Group name, looked after in the root of the dictionary"
   __group__ = "base"
+
+  "Required type keys"
   __keys__ = {}
-  __noformat__ = set([])
+
+  "Required configuration keys"
+  __config_keys__ = {}
 
   def __init__(self, config):
     self.config = config

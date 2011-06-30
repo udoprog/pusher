@@ -26,7 +26,7 @@ def entry():
   }
 
   try:
-    getopts, args = getopt.gnu_getopt(sys.argv[1:], "c:l:")
+    getopts, args = getopt.gnu_getopt(sys.argv[1:], "c:l:D:")
   except getopt.GetoptError, e:
     print >> sys.stderr, "Option parsing failed: " + str(e)
     sys.exit(1)
@@ -34,6 +34,12 @@ def entry():
   for (o, v) in getopts:
     if o == "-c": opts["config"] = [v]
     if o == "-l": opts["log_level"] = v
+    if o == "-D":
+      if "=" not in v:
+        opts[v] = True
+      else:
+        key, val = v.split("=", 1)
+        opts[key] = val
 
   config_paths = opts["config"]
   config_path  = None

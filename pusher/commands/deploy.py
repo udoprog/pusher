@@ -5,6 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .base import ICommand
+from .base import check_stage
 from ..utils import TarFile
 
 from zope.interface import implements
@@ -24,8 +25,7 @@ class DeployCommand:
   def validate(self, args):
     if len(args) != 2:
       raise RuntimeError, "Number of arguments must be exactly 2"
-    if not self.env.contains(args[0]):
-      raise RuntimeError, "Environment does not contain stage: " + args[0]
+    check_stage(self.env, args[0])
     return args
 
   def execute(self, stage, version):

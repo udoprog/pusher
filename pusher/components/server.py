@@ -9,7 +9,8 @@ from ..ssh import SSHClient
 
 class Server(CompBase):
   __group__ = "servers"
-  __keys__ = {
+  __keys__ = {  }
+  __config_keys__ = {
     "address": basestring,
     "server_root": basestring,
   }

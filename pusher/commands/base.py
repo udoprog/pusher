@@ -6,6 +6,21 @@ logger = logging.getLogger(__name__)
 
 from zope.interface import Interface, Attribute
 
+def check_stage(env, stage):
+  if not env.contains(stage):
+    print "Environment does not contain stage: " + stage
+
+    if len(env.deploys) > 0:
+      print "Available stages are:"
+      for deploy in env.deploys:
+        print deploy
+    else:
+      print "No available stages"
+
+    print ""
+
+    raise RuntimeError, "No such stage: " + stage
+
 class ICommand(Interface):
   command = Attribute("""Command string""")
 

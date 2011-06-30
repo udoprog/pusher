@@ -24,8 +24,14 @@ class PusherConfig:
       if isinstance(s, list):
         return [config_format(r, params) for r in s]
 
+      if isinstance(s, dict):
+        kw = dict()
+        for k, v in s.items():
+          kw[k] = config_format(v, params)
+        return kw
+
       if not isinstance(s, basestring):
-        return s
+        raise RuntimeError, "cannot format '{}' of type {}".format(key, str(type(s)))
 
       try:
         return s.format(**params)
@@ -76,7 +82,13 @@ class PusherEnvironment(object):
       self.commands[klass.command.lower()] = inst
 
   def run(self, command):
-    return os.system(command)
+    print "Running: {}".format(command)
+    exitcode = os.system(command)
+
+    if exitcode != 0:
+      raise RuntimeError, "non-zero exitcode: {}".format(exitcode)
+
+    return exitcode
 
   def shutdown(self):
     for klass in root_objects:
@@ -101,50 +113,74 @@ class PusherEnvironment(object):
 
     return command
 
-def validate_config(c):
-  def check_type(k, c, vtype):
-    if k not in c:
-      raise RuntimeError, "{}: missing key".format(k)
-    vv = c.get(k)
+def validate_config(environ, config):
+  ignore = set([dict, list, tuple])
+
+  def check_type(k, environ, vtype):
+    if k not in environ:
+      vv = vtype()
+    else:
+      vv = environ.get(k)
     rtype = type(vv)
     if not isinstance(vv, vtype):
       raise RuntimeError, "{}: should be '{}' but is '{}'".format(k, vtype.__name__, rtype.__name__)
 
-  def valid_component(c, klass):
+  def valid_component(environ, klass):
     for k, vtype in klass.__keys__.items():
-      check_type(k, c, vtype)
+      check_type(k, environ, vtype)
 
-  def each_key(conf, name, func):
-    for i, (k, v) in enumerate(conf.get(name).items()):
+    sub = {}
+
+    for k, v in environ.items():
+      if type(v) in ignore:
+        continue
+      sub[k] = v
+
+    cc = config.sub(**sub)
+
+    for k, vt in klass.__config_keys__.items():
+      try:
+        v = cc.get(k)
+      except KeyError, e:
+        raise RuntimeError, "missing required config key: {}".format(k)
+
+      if not isinstance(v, vt):
+        raise RuntimeError, "config key: {}: expected type {} but is {}".format(k, vt, v)
+
+  def each_key(environ, name, func):
+    if name not in environ:
+      environ[name] = dict()
+      return
+
+    for i, (k, v) in enumerate(environ.get(name).items()):
       if v is None:
         raise RuntimeError, ("{}#{} \"{}\": value is null".format(name, i, k))
 
       if type(v) != dict:
         raise RuntimeError, "type is not 'dict'"
 
-      subc = conf.sub(**v)
-
       try:
-        func(subc)
+        func(v)
       except RuntimeError, e:
         raise RuntimeError, ("{}#{} \"{}\": {}".format(name, i, k, str(e)))
 
   for k in root_objects:
-    check_type(k.__group__, c, dict)
+    check_type(k.__group__, environ, dict)
 
   for klass in root_objects:
     try:
-      each_key(c, klass.__group__, lambda c: valid_component(c, klass))
+      each_key(environ, klass.__group__, lambda environ: valid_component(environ, klass))
     except RuntimeError, e:
       raise RuntimeError, "root: {}: {}".format(klass.__group__, str(e))
 
 def create_components(env, environ, klass):
+  ignore = set([dict, list, tuple])
+
   comps = list()
   for k,v in environ[klass.__group__].items():
-    cc = dict(name=k)
-    for sk,sv in v.items():
-      cc[sk] = sv
-    comps.append(klass(env.config.sub(**cc)))
+    sub = dict(name=k)
+    sub.update(v)
+    comps.append(klass(env.config.sub(**sub)))
   return comps
 
 def create_env(root, environ, opts):
@@ -167,7 +203,7 @@ def create_env(root, environ, opts):
   config = PusherConfig(config)
 
   try:
-    validate_config(config)
+    validate_config(environ, config)
   except RuntimeError, e:
     raise RuntimeError, "Invalid schema: "+ str(e)
 

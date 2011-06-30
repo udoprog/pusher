@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 import paramiko
 
-def _safe_warp(name, func, *args, **kw):
+def _safe_wrap(name, func, *args, **kw):
   try:
     func(*args, **kw)
   except Exception, e:

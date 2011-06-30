@@ -5,6 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .base import ICommand
+from .base import check_stage
 from ..utils import TarFile
 
 from zope.interface import implements
@@ -24,8 +25,7 @@ class CheckoutCommand:
   def validate(self, args):
     if len(args) != 2:
       raise RuntimeError, "Number of arguments must be exactly 2"
-    if not self.env.contains(args[0]):
-      raise RuntimeError, "Environment does not contain stage: " + args[0]
+    check_stage(self.env, args[0])
     return args
 
   def execute(self, stage, version):
@@ -57,10 +57,14 @@ class CheckoutCommand:
         previous.append(((server, module), module.current(server)))
         changed.append(False)
 
+    # run as little as possible with terminal errors
     for i, ((server, module), (current_name, current_version)) in enumerate(previous):
       if "before_checkout" in module.config:
         print "Triggering", module.name, "{before_checkout} on", server
-        server.pretty_run(module.config.get("before_checkout"))
+        code = server.pretty_run(module.config.get("before_checkout"))
+        if code != 0:
+          print "before_checkout: non-zero exit status"
+          return False
 
     for i, ((server, module), (current_name, current_version)) in enumerate(previous):
       name="{} (version {}-{}) on {}".format(module.name, deploy.name, version, server)
@@ -103,7 +107,10 @@ class CheckoutCommand:
 
       return False
     finally:
+      # run as much as possible and log errors
       for i, ((server, module), _) in enumerate(previous):
         if "after_checkout" in module.config:
           print "Triggering", module.name, "{after_checkout} on", server
-          server.pretty_run(module.config.get("after_checkout"))
+          code = server.pretty_run(module.config.get("after_checkout"))
+          if code != 0:
+            logger.error("before_checkout: non-zero exit status")
