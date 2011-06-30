@@ -15,9 +15,10 @@ class Server(CompBase):
     "server_root": basestring,
   }
 
+  server_check_file_default = ".pusher"
+
   def __init__(self, config):
     self._ssh_connection = None
-    self.server_check = config.get("server_check", ".pusher")
     CompBase.__init__(self, config)
 
   def pretty_run(self, command, line="#: ", stream=sys.stdout, client=None):

@@ -9,15 +9,23 @@ from .archive import Archive
 from .handles import import_name
 from .commands import all_commands
 
-class PusherConfig:
-  def __init__(self, params={}, parent=None):
+class config_dict:
+  def __init__(self, params={}, override={}, parent=None):
     self.params = params
     self.parent = parent
+    self.override = override
+
+  def subp(self, parent):
+    p = dict(parent.params)
+    p.update(self.params)
+    p.update(self.override)
+    return config_dict(p, self.override, parent)
 
   def sub(self, **params):
     p = dict(self.params)
     p.update(params)
-    return PusherConfig(p, parent=self)
+    p.update(self.override)
+    return config_dict(p, self.override, self)
 
   def get(self, key, default=None, params=None):
     def config_format(s, params):
@@ -193,14 +201,10 @@ def create_env(root, environ, opts):
     for name in config.get("handles"):
       import_name(name)
 
-  config.update(os.environ)
-
   config["root"] = root
-  config["cwd"] = os.getcwd()
+  config["cwd"]  = os.getcwd()
 
-  config.update(opts)
-
-  config = PusherConfig(config)
+  config = config_dict(config, opts)
 
   try:
     validate_config(environ, config)

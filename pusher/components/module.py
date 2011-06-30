@@ -65,7 +65,8 @@ class Module(CompBase):
     if not sftp.is_dir(server.server_root):
       raise RuntimeError, "Server root does not exist (run setup): " + server.server_root
 
-    server_check = "{}/{}".format(server.server_root, server.server_check)
+    server_check_file = server.config.get("server_check_file", server.server_check_file_default)
+    server_check = "{}/{}".format(server.server_root, server_check_file)
 
     if not sftp.is_file(server_check):
       raise RuntimeError, "Server check does not exist (run setup): " + server_check
