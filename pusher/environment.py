@@ -39,7 +39,7 @@ class config_dict:
         return kw
 
       if not isinstance(s, basestring):
-        raise RuntimeError, "cannot format '{}' of type {}".format(key, str(type(s)))
+        return s;
 
       try:
         return s.format(**params)

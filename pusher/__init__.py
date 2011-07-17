@@ -10,6 +10,11 @@ from .commands import all_commands
 
 def exit_usage(env):
   print("Usage: pusher <command>")
+  print("General options:");
+  print("-c <config>      : Specify another configuration file than default")
+  print("-l <level>       : Specify logging level, one of ERROR, WARNING, INFO, DEBUG")
+  print("-D <key>=<value> : Perform a temporary override of a configuration value")
+  print("")
   for name, command in sorted(env.list_commands().items()):
     print "  {:25}: {}".format(name, command.short)
   sys.exit(1)
