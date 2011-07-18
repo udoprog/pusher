@@ -41,7 +41,7 @@ class CheckoutCommand:
         try:
           module.check(server)
         except Exception, e:
-          print "Bad server {}: {}".format(server, str(e))
+          print "Bad server {0}: {1}".format(server, str(e))
           all_ok = False
 
     if not all_ok:
@@ -67,19 +67,19 @@ class CheckoutCommand:
           return False
 
     for i, ((server, module), (current_name, current_version)) in enumerate(previous):
-      name="{} (version {}-{}) on {}".format(module.name, deploy.name, version, server)
+      name="{0} (version {1}-{2}) on {3}".format(module.name, deploy.name, version, server)
 
       if current_name == deploy.name and current_version == version:
-        print("{}: {}".format(name, "Already checked out"))
+        print("{0}: {1}".format(name, "Already checked out"))
         changed[i] = True
         continue
 
-      print("{}: {}".format(name, "Checking out"))
+      print("{0}: {1}".format(name, "Checking out"))
 
       try:
         module.checkout(server, deploy.name, version)
       except Exception, e:
-        logger.error("Failed to checkout: {}".format(str(e)))
+        logger.error("Failed to checkout: {0}".format(str(e)))
         break
 
       changed[i] = True
@@ -93,7 +93,7 @@ class CheckoutCommand:
         if not changed[i]:
           continue
 
-        print("Reverting back to  module {} (version {}-{}) on {}".format(module.name, deploy_name, version, server))
+        print("Reverting back to  module {0} (version {1}-{2}) on {3}".format(module.name, deploy_name, version, server))
 
         try:
           module.checkout(server, deploy_name, version)

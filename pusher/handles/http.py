@@ -33,12 +33,12 @@ def http_request(create_connection):
 
       tempfile = os.fdopen(td, "w+")
 
-      logger.debug("downloading to temporary file {}".format(path))
+      logger.debug("downloading to temporary file {0}".format(path))
 
       try:
         shutil.copyfileobj(response, tempfile)
       except:
-        logger.debug("removing temporary file {}".format(path))
+        logger.debug("removing temporary file {0}".format(path))
         tempfile.close()
         os.remove(path)
         raise
@@ -86,7 +86,7 @@ def http_request(create_connection):
               if "path" in item and not url.path.startswith(item["path"]):
                 continue
 
-              logger.debug("Sending cookie: {}".format(item.coded_value))
+              logger.debug("Sending cookie: {0}".format(item.coded_value))
               conn.putheader("Cookie", item.coded_value)
           
           conn.endheaders()
@@ -96,7 +96,7 @@ def http_request(create_connection):
           set_cookie = response.getheader("set-cookie")
 
           if set_cookie and handle.use_cookies:
-            logger.debug("Setting cookie: {}".format(set_cookie))
+            logger.debug("Setting cookie: {0}".format(set_cookie))
             cookie = Cookie.SimpleCookie()
             cookie.load(set_cookie)
 
@@ -109,7 +109,7 @@ def http_request(create_connection):
           if location in redirects:
             raise RuntimeError, "circular redirects"
 
-          logger.debug("Redirecting to {}".format(location))
+          logger.debug("Redirecting to {0}".format(location))
           url = urlparse.urlparse(location)
           redirects.append(location)
         except:

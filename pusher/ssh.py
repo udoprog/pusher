@@ -9,7 +9,7 @@ def _safe_wrap(name, func, *args, **kw):
   try:
     func(*args, **kw)
   except Exception, e:
-    logger.error("Failed to execute {}: {}".format(name, str(e)))
+    logger.error("Failed to execute {0}: {1}".format(name, str(e)))
 
 class SFTPClient:
   def __init__(self, sftp):
@@ -19,16 +19,16 @@ class SFTPClient:
     self.sftp.chdir(path)
 
   def mkdir(self, path):
-    logger.info("checking directory: {}".format(path))
+    logger.info("checking directory: {0}".format(path))
 
     try:
       st = self.sftp.stat(path)
     except Exception, e:
-      logger.info("creating directory: {}".format(path))
+      logger.info("creating directory: {0}".format(path))
       try:
         self.sftp.mkdir(path)
       except Exception, e:
-        raise RuntimeError, "Failed to create directory {}: {}".format(path, str(e))
+        raise RuntimeError, "Failed to create directory {0}: {1}".format(path, str(e))
 
   def upload(self, fp, path):
     import shutil
@@ -146,12 +146,12 @@ class SSHClient:
     if "ssh_private_key" in config:
       private_key = config.get("ssh_private_key")
 
-      logger.info("Using private key: {}".format(private_key))
+      logger.info("Using private key: {0}".format(private_key))
 
       try:
         kw["pkey"] = paramiko.DSSKey.from_private_key_file(private_key)
       except Exception, e:
-        logger.warning("Could not open private key: {}".format(private_key, str(e)))
+        logger.warning("Could not open private key: {0}".format(private_key, str(e)))
 
     if "ssh_username" in config:
       kw["username"] = config.get("ssh_username")
@@ -161,7 +161,7 @@ class SSHClient:
     try:
       ssh.connect(ssh_address, **kw)
     except Exception, e:
-      raise RuntimeError, "connect to {} failed: {}".format(ssh_address, str(e))
+      raise RuntimeError, "connect to {0} failed: {1}".format(ssh_address, str(e))
 
     self.ssh = ssh
     self.transport = self.ssh.get_transport()

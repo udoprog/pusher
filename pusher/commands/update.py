@@ -36,7 +36,7 @@ class UpdateCommand:
       return False
 
     for module in deploy.modules:
-      name = "{}-{}".format(module.name, version)
+      name = "{0}-{1}".format(module.name, version)
 
       path = self.env.archive.module_path(module, stage, version)
 

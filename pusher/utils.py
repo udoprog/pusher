@@ -24,18 +24,18 @@ class TarFile:
     import tempfile
 
     if not IHandle.providedBy(handle):
-      raise RuntimeError, "{} does not provide IHandle".format(repr(handle))
+      raise RuntimeError, "{0} does not provide IHandle".format(repr(handle))
 
     try:
       handle.request()
     except Exception, e:
-      raise RuntimeError, "request failed: {}".format(str(e))
+      raise RuntimeError, "request failed: {0}".format(str(e))
 
     info       = tarfile.TarInfo(handle.name)
     info.mtime = handle.mtime
     info.size  = handle.size
 
-    logger.debug("Adding to tar: {}".format(info.name))
+    logger.debug("Adding to tar: {0}".format(info.name))
 
     try:
       self.tar.addfile(info, handle.fileobj)

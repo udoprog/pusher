@@ -16,7 +16,7 @@ def exit_usage(env):
   print("-D <key>=<value> : Perform a temporary override of a configuration value")
   print("")
   for name, command in sorted(env.list_commands().items()):
-    print "  {:25}: {}".format(name, command.short)
+    print "  {0:25}: {1}".format(name, command.short)
   sys.exit(1)
 
 def entry():
@@ -62,17 +62,17 @@ def entry():
       elif conf.endswith(".json"):
         config_dict = json.load(open(path))
       else:
-        print >> sys.stderr, "Unsupported file extension: {}".format(conf)
+        print >> sys.stderr, "Unsupported file extension: {0}".format(conf)
         sys.exit(1)
     except Exception, e:
-      print >> sys.stderr, "Failed to open configuration {}: {}".format(conf, str(e))
+      print >> sys.stderr, "Failed to open configuration {0}: {1}".format(conf, str(e))
       sys.exit(1)
 
     config_path = path
     break
 
   if not config_dict:
-    print >> sys.stderr, "No configuration found: {}".format(", ".join(config_paths))
+    print >> sys.stderr, "No configuration found: {0}".format(", ".join(config_paths))
     sys.exit(1)
 
   root = os.path.dirname(config_path)

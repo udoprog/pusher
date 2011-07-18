@@ -13,4 +13,4 @@ class Check(CompBase):
   }
 
   def __str__(self):
-    return "{{{}}} ({})".format(self.command, self.name)
+    return "{{{0}}} ({1})".format(self.command, self.name)

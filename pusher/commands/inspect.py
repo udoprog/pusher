@@ -26,4 +26,4 @@ class InspectCommand:
 
   def execute(self, *args):
     for c in self.env.config:
-      print "{:20} = {}".format(c, self.env.config.get(c))
+      print "{0:20} = {1}".format(c, self.env.config.get(c))

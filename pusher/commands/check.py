@@ -41,7 +41,7 @@ class CheckCommand:
 
     for server in deploy.servers:
       for check in deploy.checks:
-        line = "Check #{:03} {}:".format(i, check.name)
+        line = "Check #{0:03} {1}:".format(i, check.name)
         if server.pretty_run(check.command, line=line) != 0:
           ok = False
         i += 1

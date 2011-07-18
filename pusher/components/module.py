@@ -53,9 +53,9 @@ class Module(CompBase):
 
   def _setup_paths(self, version, deploy_name):
     rr = (self.releases_path, version, deploy_name)
-    release_path = "{}/{}-{}".format(*rr)
-    release_tmp  = "{}/.{}-{}.tmp".format(*rr)
-    release_tar  = "{}/{}-{}.tar".format(*rr)
+    release_path = "{0}/{1}-{2}".format(*rr)
+    release_tmp  = "{0}/.{1}-{2}.tmp".format(*rr)
+    release_tar  = "{0}/{1}-{2}.tar".format(*rr)
     return release_path, release_tmp, release_tar
 
   def check(self, server):
@@ -66,7 +66,7 @@ class Module(CompBase):
       raise RuntimeError, "Server root does not exist (run setup): " + server.server_root
 
     server_check_file = server.config.get("server_check_file", server.server_check_file_default)
-    server_check = "{}/{}".format(server.server_root, server_check_file)
+    server_check = "{0}/{1}".format(server.server_root, server_check_file)
 
     if not sftp.is_file(server_check):
       raise RuntimeError, "Server check does not exist (run setup): " + server_check
@@ -78,7 +78,7 @@ class Module(CompBase):
     if not sftp.is_dir(server.server_root):
       sftp.mkdir(server.server_root)
 
-    server_check = "{}/{}".format(server.server_root, server.server_check)
+    server_check = "{0}/{1}".format(server.server_root, server.server_check)
 
     if not sftp.is_file(server_check):
       sftp.touch(server_check)
@@ -90,25 +90,25 @@ class Module(CompBase):
     sftp = client.open_sftp()
 
     if not sftp.is_dir(server.server_root):
-      logger.debug("Missing: {}".format(server.server_root))
+      logger.debug("Missing: {0}".format(server.server_root))
       return False
 
-    server_check = "{}/{}".format(server.server_root, server.server_check)
+    server_check = "{0}/{1}".format(server.server_root, server.server_check)
 
     if not sftp.is_file(server_check):
-      logger.debug("Missing: {}".format(server_check))
+      logger.debug("Missing: {0}".format(server_check))
       return False
 
     deploy_root = os.path.join(server.server_root, self.name)
 
     if not sftp.is_dir(deploy_root):
-      logger.debug("Missing: {}".format(deploy_root))
+      logger.debug("Missing: {0}".format(deploy_root))
       return False
 
     sftp.chdir(deploy_root)
 
     if not sftp.is_dir(self.releases_path):
-      logger.debug("Missing: {}".format(self.releases_path))
+      logger.debug("Missing: {0}".format(self.releases_path))
       return False
 
     return True
@@ -127,7 +127,7 @@ class Module(CompBase):
 
     release_path, release_tmp, release_tar = self._setup_paths(version, deploy_name)
 
-    release_full = "{}/{}".format(root, release_path)
+    release_full = "{0}/{1}".format(root, release_path)
 
     if not sftp.is_dir(release_path):
       raise RuntimeError, "release not available - missing deploy?"
@@ -140,7 +140,7 @@ class Module(CompBase):
         sftp.symlink(release_path, self.current_path)
 
     logger.info("Uploading revision string")
-    revision_str = "{}:{}".format(deploy_name, version)
+    revision_str = "{0}:{1}".format(deploy_name, version)
     sftp.upload_string(revision_str, self.revision_path)
     sftp.symlink(release_path, self.current_path)
 
@@ -185,7 +185,7 @@ class Module(CompBase):
 
     if sftp.is_dir(release_path):
       logger.debug("Removing stale release_path")
-      remove_cmd = "cd {} && rm -rf {}".format(root, release_path)
+      remove_cmd = "cd {0} && rm -rf {1}".format(root, release_path)
 
       exitcode, stdout, stderr = client.run(remove_cmd)
 
@@ -196,11 +196,11 @@ class Module(CompBase):
 
     try:
       if not sftp.is_file(release_tar):
-        logger.info("Uploading: {}".format(release_tar))
+        logger.info("Uploading: {0}".format(release_tar))
         sftp.upload(source, release_tar)
 
       logger.info("Extracting archive")
-      unpack_cmd = "cd {} && tar -C \"{}\" -xvf \"{}\"".format(root, release_tmp, release_tar)
+      unpack_cmd = "cd {0} && tar -C \"{1}\" -xvf \"{2}\"".format(root, release_tmp, release_tar)
       exitcode, stdout, stderr = client.run(unpack_cmd)
 
       if exitcode != 0:
@@ -212,5 +212,5 @@ class Module(CompBase):
       raise
 
   def __str__(self):
-    return "{} ({})".format(self.urls, self.name)
+    return "{0} ({1})".format(self.urls, self.name)
 

@@ -90,11 +90,11 @@ class PusherEnvironment(object):
       self.commands[klass.command.lower()] = inst
 
   def run(self, command):
-    print "Running: {}".format(command)
+    print "Running: {0}".format(command)
     exitcode = os.system(command)
 
     if exitcode != 0:
-      raise RuntimeError, "non-zero exitcode: {}".format(exitcode)
+      raise RuntimeError, "non-zero exitcode: {0}".format(exitcode)
 
     return exitcode
 
@@ -131,7 +131,7 @@ def validate_config(environ, config):
       vv = environ.get(k)
     rtype = type(vv)
     if not isinstance(vv, vtype):
-      raise RuntimeError, "{}: should be '{}' but is '{}'".format(k, vtype.__name__, rtype.__name__)
+      raise RuntimeError, "{0}: should be '{1}' but is '{2}'".format(k, vtype.__name__, rtype.__name__)
 
   def valid_component(environ, klass):
     for k, vtype in klass.__keys__.items():
@@ -150,10 +150,10 @@ def validate_config(environ, config):
       try:
         v = cc.get(k)
       except KeyError, e:
-        raise RuntimeError, "missing required config key: {}".format(k)
+        raise RuntimeError, "missing required config key: {0}".format(k)
 
       if not isinstance(v, vt):
-        raise RuntimeError, "config key: {}: expected type {} but is {}".format(k, vt, v)
+        raise RuntimeError, "config key: {0}: expected type {1} but is {2}".format(k, vt, v)
 
   def each_key(environ, name, func):
     if name not in environ:
@@ -162,7 +162,7 @@ def validate_config(environ, config):
 
     for i, (k, v) in enumerate(environ.get(name).items()):
       if v is None:
-        raise RuntimeError, ("{}#{} \"{}\": value is null".format(name, i, k))
+        raise RuntimeError, ("{0}#{1} \"{2}\": value is null".format(name, i, k))
 
       if type(v) != dict:
         raise RuntimeError, "type is not 'dict'"
@@ -170,7 +170,7 @@ def validate_config(environ, config):
       try:
         func(v)
       except RuntimeError, e:
-        raise RuntimeError, ("{}#{} \"{}\": {}".format(name, i, k, str(e)))
+        raise RuntimeError, ("{0}#{1} \"{2}\": {3}".format(name, i, k, str(e)))
 
   for k in root_objects:
     check_type(k.__group__, environ, dict)
@@ -179,7 +179,7 @@ def validate_config(environ, config):
     try:
       each_key(environ, klass.__group__, lambda environ: valid_component(environ, klass))
     except RuntimeError, e:
-      raise RuntimeError, "root: {}: {}".format(klass.__group__, str(e))
+      raise RuntimeError, "root: {0}: {1}".format(klass.__group__, str(e))
 
 def create_components(env, environ, klass):
   ignore = set([dict, list, tuple])
@@ -221,6 +221,6 @@ def create_env(root, environ, opts):
   try:
     env.setup()
   except RuntimeError, e:
-    raise RuntimeError, "Invalid environment: {}".format(str(e))
+    raise RuntimeError, "Invalid environment: {0}".format(str(e))
 
   return env

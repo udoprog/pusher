@@ -52,7 +52,7 @@ class Server(CompBase):
       logger.debug("Reusing cached connection")
       return self._ssh_connection
 
-    logger.debug("Initializing new connection to {}".format(self))
+    logger.debug("Initializing new connection to {0}".format(self))
     self._ssh_connection = SSHClient(self.address, self.config)
     return self._ssh_connection
 
@@ -65,5 +65,5 @@ class Server(CompBase):
       self._ssh_connection = None
 
   def __str__(self):
-    return "{} ({})".format(self.address, self.name)
+    return "{0} ({1})".format(self.address, self.name)
 

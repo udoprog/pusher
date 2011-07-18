@@ -42,7 +42,7 @@ class DeployCommand:
         try:
           module.check(server)
         except Exception, e:
-          print "Bad server {}: {}".format(server, str(e))
+          print "Bad server {0}: {1}".format(server, str(e))
           all_ok = False
 
     for module in deploy.modules:
@@ -60,10 +60,10 @@ class DeployCommand:
         source = self.env.archive.open(module, stage, version)
 
         if module.deploy_exists(server, source, deploy.name, version):
-          print "Module {} (version {}-{}) already exists at {}".format(module.name, version, deploy.name, server)
+          print "Module {0} (version {1}-{2}) already exists at {3}".format(module.name, version, deploy.name, server)
           continue
 
-        print "Deploying module {} (version {}-{}) to {} at {}".format(module.name, version, deploy.name, server, server_root)
+        print "Deploying module {0} (version {1}-{2}) to {3} at {4}".format(module.name, version, deploy.name, server, server_root)
 
         try:
           module.deploy(server, source, deploy.name, version)

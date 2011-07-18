@@ -27,10 +27,10 @@ def import_name(full):
       m = getattr(m, mi)
     klass = getattr(m, name)
   except:
-    raise RuntimeError, "{}: no such module found".format(full)
+    raise RuntimeError, "{0}: no such module found".format(full)
 
   if not IHandle.implementedBy(klass):
-    raise RuntimeError, "{}: does not implement IHandle".format(klass)
+    raise RuntimeError, "{0}: does not implement IHandle".format(klass)
 
   all_handles.append(klass)
 

@@ -17,7 +17,7 @@ class Archive:
       os.mkdir(path)
 
   def module_path(self, m, s, v):
-    return os.path.join(self.env.root, self.path, "{}-{}-{}".format(v, s, m.name))
+    return os.path.join(self.env.root, self.path, "{0}-{1}-{2}".format(v, s, m.name))
 
   def open(self, m, s, v):
     return open(self.module_path(m, s, v), "r")
