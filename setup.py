@@ -20,6 +20,7 @@ setup(name='pusher',
       install_requires=[
         'paramiko',
         'pyyaml',
+        'zope.interface'
       ],
       entry_points={
         'console_scripts': [
