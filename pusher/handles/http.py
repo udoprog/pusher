@@ -51,7 +51,12 @@ def http_request(create_connection):
 
       name = url.path.split("/")[-1]
 
-      ext = mimetypes.guess_extension(content_type)
+      ext = name.split(".")[-1]
+
+      if ext is None or ext == "":
+        ext = mimetypes.guess_extension(content_type)
+      else:
+        ext = "." + ext
 
       if name == "":
         name = handle.default_name
