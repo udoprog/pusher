@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .base import ICommand
-from .base import check_stage
+from .base import handle_stages
 from ..utils import TarFile
 
 from zope.interface import implements
@@ -27,11 +27,7 @@ class DeployCommand:
       raise RuntimeError, "Number of arguments must be greater than zero"
 
     args = map(lambda a: tuple(a.split(":", 1)), args)
-
-    for (stage, version) in args:
-      check_stage(self.env, stage)
-
-    return args
+    return handle_stages(args)
 
   def execute(self, *stages):
     all_ok = True

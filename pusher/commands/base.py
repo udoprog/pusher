@@ -21,6 +21,20 @@ def check_stage(env, stage):
 
     raise RuntimeError, "No such stage: " + stage
 
+def handle_stages(env, args):
+  decl = []
+
+  for (stage, version) in args:
+    if stage == "@":
+      for s in env.deploys.keys():
+        decl.append((s, version))
+      return decl
+
+    check_stage(env, stage)
+    decl.append((stage, version))
+
+  return decl
+
 class ICommand(Interface):
   command = Attribute("""Command string""")
 
