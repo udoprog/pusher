@@ -27,7 +27,7 @@ class DeployCommand:
       raise RuntimeError, "Number of arguments must be greater than zero"
 
     args = map(lambda a: tuple(a.split(":", 1)), args)
-    return handle_stages(args)
+    return handle_stages(self.env, args)
 
   def execute(self, *stages):
     all_ok = True
