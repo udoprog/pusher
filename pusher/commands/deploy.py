@@ -23,51 +23,58 @@ class DeployCommand:
     self.env = env
 
   def validate(self, args):
-    if len(args) != 2:
-      raise RuntimeError, "Number of arguments must be exactly 2"
-    check_stage(self.env, args[0])
+    if len(args) < 1:
+      raise RuntimeError, "Number of arguments must be greater than zero"
+
+    args = map(lambda a: tuple(a.split(":", 1)), args)
+
+    for (stage, version) in args:
+      check_stage(self.env, stage)
+
     return args
 
-  def execute(self, stage, version):
-    deploy = self.env.deploys.get(stage, None)
-
-    if not deploy:
-      logger.error("No such stage: " + stage)
-      return False
-
+  def execute(self, *stages):
     all_ok = True
 
-    for server in deploy.servers:
-      for module in deploy.modules:
-        try:
-          module.check(server)
-        except Exception, e:
-          print "Bad server {0}: {1}".format(server, str(e))
-          all_ok = False
+    for (stage, version) in stages:
+      deploy = self.env.deploys.get(stage)
 
-    for module in deploy.modules:
-      if not self.env.archive.contains(module, stage, version):
-        print "Not in archive (run update)", self.env.archive.module_path(module, stage, version)
-        all_ok = False
+      all_ok = True
+
+      for server in deploy.servers:
+        for module in deploy.modules:
+          try:
+            module.check(server)
+          except Exception, e:
+            print "Bad server {0}: {1}".format(server, str(e))
+            all_ok = False
+
+      for module in deploy.modules:
+        if not self.env.archive.contains(module, stage, version):
+          print "Not in archive (run update)", self.env.archive.module_path(module, stage, version)
+          all_ok = False
 
     if not all_ok:
       return False
 
-    for server in deploy.servers:
-      for module in deploy.modules:
-        server_root = server.config.get("server_root")
+    for (stage, version) in stages:
+      deploy = self.env.deploys.get(stage)
 
-        source = self.env.archive.open(module, stage, version)
+      for server in deploy.servers:
+        for module in deploy.modules:
+          server_root = server.config.get("server_root")
 
-        if module.deploy_exists(server, source, deploy.name, version):
-          print "Module {0} (version {1}-{2}) already exists at {3}".format(module.name, version, deploy.name, server)
-          continue
+          source = self.env.archive.open(module, stage, version)
 
-        print "Deploying module {0} (version {1}-{2}) to {3} at {4}".format(module.name, version, deploy.name, server, server_root)
+          if module.deploy_exists(server, source, deploy.name, version):
+            print "Module {0} (version {1}-{2}) already exists at {3}".format(module.name, version, deploy.name, server)
+            continue
 
-        try:
-          module.deploy(server, source, deploy.name, version)
-        finally:
-          source.close()
+          print "Deploying module {0} (version {1}-{2}) to {3} at {4}".format(module.name, version, deploy.name, server, server_root)
+
+          try:
+            module.deploy(server, source, deploy.name, version)
+          finally:
+            source.close()
 
     return True

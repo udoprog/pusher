@@ -105,7 +105,7 @@ def entry():
     exit_usage(env)
 
   try:
-    command.validate(args)
+    args = command.validate(args)
   except RuntimeError, e:
     print >> sys.stderr, "Invalid arguments: " + str(e)
     print >> sys.stderr, ""

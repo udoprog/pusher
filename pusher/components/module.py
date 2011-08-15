@@ -78,7 +78,8 @@ class Module(CompBase):
     if not sftp.is_dir(server.server_root):
       sftp.mkdir(server.server_root)
 
-    server_check = "{0}/{1}".format(server.server_root, server.server_check)
+    server_check_file = server.config.get("server_check_file", server.server_check_file_default)
+    server_check = "{0}/{1}".format(server.server_root, server_check_file)
 
     if not sftp.is_file(server_check):
       sftp.touch(server_check)
@@ -93,7 +94,8 @@ class Module(CompBase):
       logger.debug("Missing: {0}".format(server.server_root))
       return False
 
-    server_check = "{0}/{1}".format(server.server_root, server.server_check)
+    server_check_file = server.config.get("server_check_file", server.server_check_file_default)
+    server_check = "{0}/{1}".format(server.server_root, server_check_file)
 
     if not sftp.is_file(server_check):
       logger.debug("Missing: {0}".format(server_check))

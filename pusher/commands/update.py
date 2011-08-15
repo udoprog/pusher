@@ -23,48 +23,50 @@ class UpdateCommand:
     self.env = env
 
   def validate(self, args):
-    if len(args) != 2:
-      raise RuntimeError, "Number of arguments must be exactly 2"
-    check_stage(self.env, args[0])
+    if len(args) < 1:
+      raise RuntimeError, "Number of arguments must be greater than 1"
+
+    args = map(lambda a: tuple(a.split(":", 1)), args)
+
+    for (stage, version) in args:
+      check_stage(self.env, stage)
+
     return args
 
-  def execute(self, stage, version):
-    deploy = self.env.deploys.get(stage, None)
+  def execute(self, *stages):
+    for (stage, version) in stages:
+      deploy = self.env.deploys.get(stage, None)
 
-    if not deploy:
-      logger.error("No such stage: " + stage)
-      return False
+      for module in deploy.modules:
+        name = "{0}-{1}".format(module.name, version)
 
-    for module in deploy.modules:
-      name = "{0}-{1}".format(module.name, version)
+        path = self.env.archive.module_path(module, stage, version)
 
-      path = self.env.archive.module_path(module, stage, version)
+        if self.env.archive.contains(module, stage, version):
+          print name, "already exists at", path
+          continue
 
-      if self.env.archive.contains(module, stage, version):
-        print name, "already exists at", path
-        continue
+        handles = list(module.gethandles(version))
 
-      handles = list(module.gethandles(version))
+        if "before_update" in module.config:
+          for h in handles:
+            config = module.config.sub(url=h.url.geturl())
+            self.env.run(config.get("before_update"))
 
-      if "before_update" in module.config:
-        for h in handles:
-          config = module.config.sub(url=h.url.geturl())
-          self.env.run(config.get("before_update"))
+        tar  = TarFile(path)
 
-      tar  = TarFile(path)
+        print name, "new", path
 
-      print name, "new", path
-
-      try:
-        for h in handles:
-          print name, "adding", h.url.geturl()
-          tar.download(h)
-        print name, "saving"
-        tar.commit()
-      except RuntimeError, e:
-        print name, "download failed:", str(e)
-      finally:
-        print name, "closing"
-        tar.close()
+        try:
+          for h in handles:
+            print name, "adding", h.url.geturl()
+            tar.download(h)
+          print name, "saving"
+          tar.commit()
+        except RuntimeError, e:
+          print name, "download failed:", str(e)
+        finally:
+          print name, "closing"
+          tar.close()
 
     return True

@@ -125,7 +125,10 @@ class SFTPClient:
     self.sftp.rmdir(path)
 
   def symlink(self, source, dest):
-    self.sftp.symlink(source, dest)
+    try:
+      self.sftp.symlink(source, dest)
+    except IOError, e:
+      logger.warning("Possible problem with creating symlink {0} -> {1}: {2}".format(source, dest, str(e)))
 
   def normalize(self, path):
     return self.sftp.normalize(path)

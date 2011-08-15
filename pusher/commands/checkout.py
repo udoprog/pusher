@@ -23,26 +23,29 @@ class CheckoutCommand:
     self.env = env
 
   def validate(self, args):
-    if len(args) != 2:
-      raise RuntimeError, "Number of arguments must be exactly 2"
-    check_stage(self.env, args[0])
+    if len(args) < 1:
+      raise RuntimeError, "Number of arguments must be greater than zero"
+
+    args = map(lambda a: tuple(a.split(":", 1)), args)
+
+    for (stage, version) in args:
+      check_stage(self.env, stage)
+
     return args
 
-  def execute(self, stage, version):
-    deploy = self.env.deploys.get(stage, None)
-
-    if not deploy:
-      logger.error("No such stage: " + stage)
-      return False
-
+  def execute(self, *stages):
     all_ok = True
-    for server in deploy.servers:
-      for module in deploy.modules:
-        try:
-          module.check(server)
-        except Exception, e:
-          print "Bad server {0}: {1}".format(server, str(e))
-          all_ok = False
+
+    for (stage, version) in stages:
+      deploy = self.env.deploys.get(stage, None)
+
+      for server in deploy.servers:
+        for module in deploy.modules:
+          try:
+            module.check(server)
+          except Exception, e:
+            print "Bad server {0}: {1}".format(server, str(e))
+            all_ok = False
 
     if not all_ok:
       return False
@@ -50,15 +53,18 @@ class CheckoutCommand:
     previous = list()
     changed = list()
 
-    print "Downloading rollback states"
+    for (stage, version) in stages:
+      deploy = self.env.deploys.get(stage, None)
 
-    for server in deploy.servers:
-      for module in deploy.modules:
-        previous.append(((server, module), module.current(server)))
-        changed.append(False)
+      print "Downloading rollback states"
+
+      for server in deploy.servers:
+        for module in deploy.modules:
+          previous.append(((deploy, server, module), module.current(server)))
+          changed.append(False)
 
     # run as little as possible with terminal errors
-    for i, ((server, module), (current_name, current_version)) in enumerate(previous):
+    for i, ((deploy, server, module), (current_name, current_version)) in enumerate(previous):
       if "before_checkout" in module.config:
         print "Triggering", module.name, "{before_checkout} on", server
         code = server.pretty_run(module.config.get("before_checkout"))
@@ -66,7 +72,7 @@ class CheckoutCommand:
           print "before_checkout: non-zero exit status"
           return False
 
-    for i, ((server, module), (current_name, current_version)) in enumerate(previous):
+    for i, ((deploy, server, module), (current_name, current_version)) in enumerate(previous):
       name="{0} (version {1}-{2}) on {3}".format(module.name, deploy.name, version, server)
 
       if current_name == deploy.name and current_version == version:
@@ -79,6 +85,9 @@ class CheckoutCommand:
       try:
         module.checkout(server, deploy.name, version)
       except Exception, e:
+        import traceback
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
         logger.error("Failed to checkout: {0}".format(str(e)))
         break
 
@@ -89,7 +98,8 @@ class CheckoutCommand:
         return True
 
       print("Rolling back checkout")
-      for i, ((server, module), (deploy_name, version)) in enumerate(previous):
+
+      for i, ((deploy, server, module), (deploy_name, version)) in enumerate(previous):
         if not changed[i]:
           continue
 
@@ -98,7 +108,7 @@ class CheckoutCommand:
         try:
           module.checkout(server, deploy_name, version)
         except Exception, e:
-          logger.error("Failed to rollback: {}".format(str(e)))
+          logger.error("Failed to rollback: {0}".format(str(e)))
 
         changed[i] = False
 
@@ -108,7 +118,7 @@ class CheckoutCommand:
       return False
     finally:
       # run as much as possible and log errors
-      for i, ((server, module), _) in enumerate(previous):
+      for i, ((deploy, server, module), _) in enumerate(previous):
         if "after_checkout" in module.config:
           print "Triggering", module.name, "{after_checkout} on", server
           code = server.pretty_run(module.config.get("after_checkout"))
