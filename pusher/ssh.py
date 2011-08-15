@@ -181,7 +181,7 @@ class SSHClient:
     self.transport.close()
     self.ssh.close()
 
-  def run(self, command):
+  def run(self, command, stdout=None, stderr=None):
     import time
 
     if not self.connected():
@@ -190,33 +190,41 @@ class SSHClient:
     logger.debug("getting transport")
     chan = self.transport.open_session()
 
-    stdout = StringIO()
-    stderr = StringIO()
-    
     try:
       chan.settimeout(float(self.timeout))
       chan.exec_command(command + "\n")
+
+      logger.info("SSH: {0}".format(command));
 
       i = 0
 
       # flush both stdout, stderr and wait for exitcode
       while not chan.exit_status_ready() or (chan.recv_ready() or chan.recv_stderr_ready()):
         if chan.recv_ready():
-          stdout.write(chan.recv(self.bufsize))
+          if stdout is not None:
+            stdout.write(chan.recv(self.bufsize))
+          else:
+            chan.recv(self.bufsize)
+
+          i = 0
           continue
 
         if chan.recv_stderr_ready():
-          stderr.write(chan.recv_stderr(self.bufsize))
+          if stderr is not None:
+            stderr.write(chan.recv_stderr(self.bufsize))
+          else:
+            chan.recv_stderr(self.bufsize)
+
+          i = 0
           continue
 
         time.sleep(self.io_sleep)
+
         if i < self.io_sleep_limit:
           i += 1
         else:
           raise RuntimeError, "ssh_timeout reached"
 
-      return chan.recv_exit_status(), stdout.getvalue(), stderr.getvalue()
+      return chan.recv_exit_status()
     finally:
       chan.close()
-      stdout.close()
-      stderr.close()

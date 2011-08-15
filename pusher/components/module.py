@@ -186,7 +186,7 @@ class Module(CompBase):
       return
 
     if sftp.is_dir(release_path):
-      logger.debug("Removing stale release_path")
+      logger.info("Removing stale release_path")
       remove_cmd = "cd {0} && rm -rf {1}".format(root, release_path)
 
       exitcode, stdout, stderr = client.run(remove_cmd)

@@ -86,7 +86,7 @@ def entry():
   log_level = env.config.get("log_level", "INFO")
 
   if not hasattr(logging, log_level):
-    print >> sys.stderr, "no such log level: " + log_level
+    print >> sys.stderr, "No such log level: " + log_level
     sys.exit(1);
 
   f="%(asctime)s - %(name)-30s - %(levelname)-7s - %(message)s"
