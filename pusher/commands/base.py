@@ -22,14 +22,23 @@ def check_stage(env, stage):
     raise RuntimeError, "No such stage: " + stage
 
 def handle_stages(env, args):
+  """
+  Handle a set of stage arguments, if any one is '@', replace with all available stages for that specific version.
+  """
+  if len(args) < 1:
+    raise RuntimeError, "Number of arguments must be greater than 1"
+
+  for a in args:
+    if ":" not in args:
+      raise ValueError, "invalid argument, expected <deploy>:<version>: {0}".format(a)
+
+  args = map(lambda a: tuple(a.split(":", 1)), args)
+
   decl = []
 
   for (stage, version) in args:
     if stage == "@":
-      for s in env.deploys.keys():
-        decl.append((s, version))
-      return decl
-
+      return map(lambda s: (s, version), env.deploys.keys())
     check_stage(env, stage)
     decl.append((stage, version))
 
