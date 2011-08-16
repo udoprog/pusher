@@ -26,7 +26,18 @@ class Server(CompBase):
       client = self.connect()
 
     print >> stream, line, "Running", command, "on", self
-    exitcode, stdout, stderr = client.run(command)
+
+    out = StringIO()
+    err = StringIO()
+
+    try:
+      exitcode = client.run(command, stdout=out, stderr=err)
+    finally:
+      out.close()
+      err.close()
+
+    stdout = out.getvalue()
+    stderr = err.getvalue()
 
     def print_out(name, s):
       for l in s.split("\n"):

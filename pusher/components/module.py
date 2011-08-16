@@ -189,7 +189,7 @@ class Module(CompBase):
       logger.info("Removing stale release_path")
       remove_cmd = "cd {0} && rm -rf {1}".format(root, release_path)
 
-      exitcode, stdout, stderr = client.run(remove_cmd)
+      exitcode = client.run(remove_cmd)
 
       if exitcode != 0:
         raise RuntimeError, "Failed to remove release_path"
@@ -203,7 +203,7 @@ class Module(CompBase):
 
       logger.info("Extracting archive")
       unpack_cmd = "cd {0} && tar -C \"{1}\" -xvf \"{2}\"".format(root, release_tmp, release_tar)
-      exitcode, stdout, stderr = client.run(unpack_cmd)
+      exitcode = client.run(unpack_cmd)
 
       if exitcode != 0:
         raise RuntimeError, "Failed to extract archive"
