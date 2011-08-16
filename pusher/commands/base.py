@@ -29,7 +29,7 @@ def handle_stages(env, args):
     raise RuntimeError, "Number of arguments must be greater than 1"
 
   for a in args:
-    if ":" not in args:
+    if ":" not in a:
       raise ValueError, "invalid argument, expected <deploy>:<version>: {0}".format(a)
 
   args = map(lambda a: tuple(a.split(":", 1)), args)
