@@ -36,6 +36,8 @@ def ziplib(config, handle):
     yield handle
     return
 
+  logger.info("Extracting since zip_unpack = true");
+
   z = zipfile.ZipFile(handle.fileobj)
 
   def convert(dt):
