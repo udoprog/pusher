@@ -32,7 +32,7 @@ class TarFile:
     except Exception, e:
       raise RuntimeError, "Failed to request handle: {0}".format(e)
 
-    logger.info("mimetype is '{0}'".format(handle.mimetype))
+    logger.info("Mime is '{0}'".format(handle.mimetype))
 
     if handle.mimetype in extlibs:
       logger.info("Using extlib for mime '{0}'".format(handle.mimetype))

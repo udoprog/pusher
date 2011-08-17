@@ -19,12 +19,12 @@ class SFTPClient:
     self.sftp.chdir(path)
 
   def mkdir(self, path):
-    logger.info("checking directory: {0}".format(path))
+    logger.info("Checking directory: {0}".format(path))
 
     try:
       st = self.sftp.stat(path)
     except Exception, e:
-      logger.info("creating directory: {0}".format(path))
+      logger.info("Creating directory: {0}".format(path))
       try:
         self.sftp.mkdir(path)
       except Exception, e:
