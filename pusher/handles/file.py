@@ -14,20 +14,25 @@ class FileHandle:
   scheme = "file"
 
   def __init__(self, url, version, config):
-    self.url     = url
-    self.version = version
-    self.config  = config
+    self.url      = url
+    self.version  = version
+    self.config   = config
 
-    self.size    = None
-    self.fileobj = None
-    self.name    = None
-    self.mtime   = None
+    self.size     = None
+    self.fileobj  = None
+    self.name     = None
+    self.mtime    = None
+    self.mimetype = None
 
   def request(self):
-    self.size    = os.path.getsize(self.url.path)
-    self.fileobj = file(self.url.path, "r")
-    self.name    = os.path.basename(self.url.path)
-    self.mtime   = os.stat(self.url.path).st_mtime
+    import mimetypes
+    mimetypes.init()
+
+    self.size     = os.path.getsize(self.url.path)
+    self.fileobj  = file(self.url.path, "r")
+    self.name     = os.path.basename(self.url.path)
+    self.mtime    = os.stat(self.url.path).st_mtime
+    self.mimetype = mimetypes.guess_type(self.name)[0]
 
   def close(self):
     if self.fileobj is not None:

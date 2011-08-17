@@ -137,6 +137,7 @@ def http_request(create_connection):
       handle.size               = handle.fileobj.tell()
       handle.name               = get_name(url, content_type)
       handle.mtime              = time.time()
+      handle.mimetype           = content_type
 
       handle.fileobj.seek(0)
     finally:
@@ -179,6 +180,7 @@ class HttpHandle:
     self.fileobj      = None
     self.name         = None
     self.mtime        = None
+    self.mimetype     = None
 
     self.requested    = False
     self.temp         = None
@@ -207,6 +209,7 @@ class HttpsHandle(HttpHandle):
     self.fileobj      = None
     self.name         = None
     self.mtime        = None
+    self.mimetype     = None
 
     self.requested    = False
     self.temp         = None

@@ -23,12 +23,16 @@ class SftpHandle:
     self.fileobj   = None
     self.name      = None
     self.mtime     = None
+    self.mimetype  = None
 
     self.requested = False
     self.temp      = None
   
   def request(self):
     import tempfile
+    import mimetypes
+
+    mimetypes.init()
 
     if self.requested:
       raise RuntimeError, "handle already requested"
@@ -46,6 +50,7 @@ class SftpHandle:
     self.size    = self.fileobj.tell()
     self.mtime   = sftp.mtime(self.url.path)
     self.name    = self.url.path.split("/")[-1]
+    self.mimetype = mimetypes.guess_type(self.name)[0]
 
     sftp.download(self.fileobj, self.url.path)
 

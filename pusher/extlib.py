@@ -8,10 +8,11 @@ logger = logging.getLogger(__name__)
 class ExtHandle:
   implements(IHandle)
 
-  def __init__(self, name, size, mtime, fileobj):
+  def __init__(self, name, size, mtime, mimetype, fileobj):
     self.name = name
     self.size = size
     self.mtime = mtime
+    self.mimetype = mimetype
     self.fileobj = fileobj
 
   def request(self):
@@ -27,28 +28,30 @@ def ziplib(config, handle):
   """
   import zipfile
   import calendar
+  import mimetypes
+
+  mimetypes.init()
 
   if not config.get("zip_unpack", False):
     yield handle
     return
 
-  logger.info("Unpacking zip since zip_unpack = true")
+  z = zipfile.ZipFile(handle.fileobj)
 
-  zipfile = zipfile.ZipFile(handle.fileobj)
-
-  def convert_date_time(dt):
+  def convert(dt):
     """
     Convert a ZipInfo date_time into a unix timestamp (compatible with tar).
     """
     return calendar.timegm(dt)
 
-  for info in zipfile.infolist():
-    yield ExtHandle(info.filename, info.file_size, convert_date_time(info.date_time), zipfile.open(info))
+  for i in z.infolist():
+    mime = mimetypes.guess_type(i.filename)[0]
+    yield ExtHandle(i.filename, i.file_size, convert(i.date_time), mime, z.open(i))
 
   return
 
 extlibs = {
-  'zip': ziplib
+  'application/zip': ziplib
 }
 
 __all__ = ["extlibs"]

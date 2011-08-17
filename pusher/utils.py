@@ -30,17 +30,16 @@ class TarFile:
     try:
       handle.request()
     except Exception, e:
-      raise RuntimeError, "request failed: {0}".format(str(e))
+      raise RuntimeError, "Failed to request handle: {0}".format(e)
 
-    if "." in handle.name:
-      ext        = handle.name.split(".")[-1]
-      if ext in extlibs:
-        logger.info("Using extlib for extension '{0}'".format(ext))
-        for handle in extlibs[ext](self.config, handle):
-          self.add_handle(handle)
-        return
+    logger.info("mimetype is '{0}'".format(handle.mimetype))
 
-    self.add_handle(handle)
+    if handle.mimetype in extlibs:
+      logger.info("Using extlib for mime '{0}'".format(handle.mimetype))
+      for h in extlibs[handle.mimetype](self.config, handle):
+        self.add_handle(h)
+    else:
+      self.add_handle(handle)
 
   def add_handle(self, handle):
     import tarfile
