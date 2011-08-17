@@ -25,6 +25,7 @@ def entry():
   """
   import yaml
   import json
+  import ast
 
   opts = {
     "config": ["pusher.yaml", "pusher.json"]
@@ -44,7 +45,7 @@ def entry():
         opts[v] = True
       else:
         key, val = v.split("=", 1)
-        opts[key] = val
+        opts[key] = ast.literal_eval(val)
 
   config_paths = opts["config"]
   config_path  = None

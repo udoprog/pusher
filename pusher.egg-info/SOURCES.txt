@@ -3,6 +3,7 @@ setup.py
 pusher/__init__.py
 pusher/archive.py
 pusher/environment.py
+pusher/extlib.py
 pusher/ssh.py
 pusher/utils.py
 pusher.egg-info/PKG-INFO

@@ -5,12 +5,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .handles.base import IHandle
+from .extlib import extlibs
 
 class TarFile:
-  def __init__(self, path):
+  def __init__(self, config, path):
     import tarfile
     import tempfile
 
+    self.config  = config
     self.path    = path
     self.temp    = path + ".tmp"
 
@@ -19,7 +21,6 @@ class TarFile:
   
   def download(self, handle):
     from cStringIO import StringIO
-    import tarfile
     import shutil
     import tempfile
 
@@ -31,11 +32,24 @@ class TarFile:
     except Exception, e:
       raise RuntimeError, "request failed: {0}".format(str(e))
 
+    if "." in handle.name:
+      ext        = handle.name.split(".")[-1]
+      if ext in extlibs:
+        logger.info("Using extlib for extension '{0}'".format(ext))
+        for handle in extlibs[ext](self.config, handle):
+          self.add_handle(handle)
+        return
+
+    self.add_handle(handle)
+
+  def add_handle(self, handle):
+    import tarfile
+
     info       = tarfile.TarInfo(handle.name)
     info.mtime = handle.mtime
     info.size  = handle.size
 
-    logger.debug("Adding to tar: {0}".format(info.name))
+    logger.info("Adding to tar: {0} ({1} bytes)".format(info.name, info.size))
 
     try:
       self.tar.addfile(info, handle.fileobj)

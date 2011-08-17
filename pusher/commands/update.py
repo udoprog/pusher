@@ -45,7 +45,7 @@ class UpdateCommand:
             config = module.config.sub(url=h.url.geturl())
             self.env.run(config.get("before_update"))
 
-        tar  = TarFile(path)
+        tar  = TarFile(module.config, path)
 
         print name, "new", path
 
