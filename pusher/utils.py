@@ -55,8 +55,10 @@ class TarFile:
     # directories must have mode 775
     if info.name.endswith("/"):
       info.mode = self.dir_permissions
+      info.type = tarfile.DIRTYPE
     else:
       info.mode = self.file_permissions
+      info.type = tarfile.REGTYPE
 
     info.mtime = handle.mtime
     info.size  = handle.size
