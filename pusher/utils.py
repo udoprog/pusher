@@ -8,6 +8,9 @@ from .handles.base import IHandle
 from .extlib import extlibs
 
 class TarFile:
+  default_dir_permissions  = "755"
+  default_file_permissions = "644"
+
   def __init__(self, config, path):
     import tarfile
     import tempfile
@@ -18,6 +21,9 @@ class TarFile:
 
     self.fp      = open(self.temp, "w")
     self.tar     = tarfile.open(mode="w", fileobj=self.fp)
+
+    self.file_permissions = int(config.get("tar_file_permissions", self.default_file_permissions), 8)
+    self.dir_permissions = int(config.get("tar_dir_permissions", self.default_dir_permissions), 8)
   
   def download(self, handle):
     from cStringIO import StringIO
@@ -45,6 +51,13 @@ class TarFile:
     import tarfile
 
     info       = tarfile.TarInfo(handle.name)
+
+    # directories must have mode 775
+    if info.name.endswith("/"):
+      info.mode = self.dir_permissions
+    else:
+      info.mode = self.file_permissions
+
     info.mtime = handle.mtime
     info.size  = handle.size
 
