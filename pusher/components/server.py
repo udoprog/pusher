@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+from cStringIO import StringIO
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +33,11 @@ class Server(CompBase):
 
     try:
       exitcode = client.run(command, stdout=out, stderr=err)
+      stdout = out.getvalue()
+      stderr = err.getvalue()
     finally:
       out.close()
       err.close()
-
-    stdout = out.getvalue()
-    stderr = err.getvalue()
 
     def print_out(name, s):
       for l in s.split("\n"):
