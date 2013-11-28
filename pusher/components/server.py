@@ -1,7 +1,7 @@
 import sys
 import os
 import logging
-from cStringIO import StringIO
+import StringIO
 
 logger = logging.getLogger(__name__)
 
@@ -28,16 +28,18 @@ class Server(CompBase):
 
     print >> stream, line, "Running", command, "on", self
 
-    out = StringIO()
-    err = StringIO()
+    out = StringIO.StringIO()
+    err = StringIO.StringIO()
 
     try:
       exitcode = client.run(command, stdout=out, stderr=err)
-      stdout = out.getvalue()
-      stderr = err.getvalue()
     finally:
       out.close()
       err.close()
+
+    '''
+    stdout = out.getvalue()
+    stderr = err.getvalue()
 
     def print_out(name, s):
       for l in s.split("\n"):
@@ -46,6 +48,7 @@ class Server(CompBase):
 
     if stdout: print_out("stdout:", stdout)
     if stderr: print_out("stderr:", stderr)
+    '''
 
     print >> stream, line, "Exited with", exitcode
     

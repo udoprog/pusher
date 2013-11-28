@@ -31,6 +31,9 @@ def entry():
     "config": ["pusher.yaml", "pusher.json"]
   }
 
+  import cache
+  cache.init()
+
   try:
     getopts, args = getopt.gnu_getopt(sys.argv[1:], "c:l:D:")
   except getopt.GetoptError, e:
