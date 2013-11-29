@@ -42,7 +42,21 @@ class config_dict:
         return s;
 
       try:
-        return s.format(**params)
+        import re
+        keydb = set('{'+key+'}')
+
+        while True:
+          sres = re.search("{.*?}", s)
+          if sres == None:
+            break
+
+          # avoid using the same reference twice
+          if sres.group() in keydb:
+            raise RuntimeError, "found circular dependency in config value '{0}' using reference '{1}'".format(s, sres.group())
+          keydb.add(sres.group())
+          s = s.format(**params)
+
+        return s
       except KeyError, e:
         raise RuntimeError, "missing configuration key: " + str(e)
 
