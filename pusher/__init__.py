@@ -8,14 +8,14 @@ logger = logging.getLogger(__name__)
 from .environment import create_env
 from .commands import all_commands
 
-def exit_usage(env):
+def exit_usage():
   print("Usage: pusher <command>")
   print("General options:");
   print("-c <config>      : Specify another configuration file than default")
   print("-l <level>       : Specify logging level, one of ERROR, WARNING, INFO, DEBUG")
   print("-D <key>=<value> : Perform a temporary override of a configuration value")
   print("")
-  for name, command in sorted(env.list_commands().items()):
+  for name, command in sorted(dict((x.command.lower(), x()) for x in all_commands).items()):
     print "  {0:25}: {1}".format(name, command.short)
   sys.exit(1)
 
@@ -76,7 +76,8 @@ def entry():
     break
 
   if not config_dict:
-    print >> sys.stderr, "No configuration found: {0}".format(", ".join(config_paths))
+    print >> sys.stderr, "No configuration found: {0}\n".format(", ".join(config_paths))
+    exit_usage()
     sys.exit(1)
 
   root = os.path.dirname(config_path)
@@ -97,7 +98,7 @@ def entry():
   logging.basicConfig(level=getattr(logging, log_level), format=f)
 
   if len(args) < 1:
-    exit_usage(env)
+    exit_usage()
 
   command = args[0]
   args    = args[1:]
@@ -106,7 +107,7 @@ def entry():
     command = env.get_command(command)
   except RuntimeError, e:
     print >> sys.stderr, "Command error: " + str(e)
-    exit_usage(env)
+    exit_usage()
 
   try:
     args = command.validate(args)
