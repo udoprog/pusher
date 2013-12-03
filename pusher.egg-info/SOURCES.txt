@@ -2,6 +2,7 @@ setup.cfg
 setup.py
 pusher/__init__.py
 pusher/archive.py
+pusher/cache.py
 pusher/environment.py
 pusher/extlib.py
 pusher/ssh.py

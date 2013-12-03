@@ -80,6 +80,11 @@ def http_request(create_connection):
           conn.putrequest("GET", url.path)
           conn.putheader("User-Agent", handle.user_agent)
 
+          if handle.auth_user:
+            import string, base64
+            auth = 'Basic ' + string.strip(base64.encodestring(handle.auth_user + ':' + handle.auth_pass))
+            conn.putheader('Authorization', auth) 
+
           if handle.send_version:
             conn.putheader("X-Pusher-Version", handle.version)
 
@@ -174,6 +179,8 @@ class HttpHandle:
     self.user_agent   = config.get("http_user_agent", "Pusher/2.0")
     self.use_cookies  = config.get("http_use_cookies", True)
     self.send_version = config.get("http_send_version", True)
+    self.auth_user    = config.get("http_auth_user", False)
+    self.auth_pass    = config.get("http_auth_pass", False)
     self.default_name = config.get("http_default_name", "index")
 
     self.size         = None
@@ -203,6 +210,8 @@ class HttpsHandle(HttpHandle):
     self.user_agent   = config.get("https_user_agent", "Pusher/2.0")
     self.use_cookies  = config.get("https_use_cookies", True)
     self.send_version = config.get("https_send_version", True)
+    self.auth_user    = config.get("http_auth_user", False)
+    self.auth_pass    = config.get("http_auth_pass", False)
     self.default_name = config.get("https_default_name", "index")
 
     self.size         = None

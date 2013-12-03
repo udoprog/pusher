@@ -146,20 +146,25 @@ class SSHClient:
 
     kw = dict()
 
+    if "ssh_username" in config:
+      kw["username"] = config.get("ssh_username")
+
+    kw["password"] = self.get_ssh_password(config)
+
     if "ssh_private_key" in config:
+      import cache
       private_key = config.get("ssh_private_key")
 
       logger.info("Using private key: {0}".format(private_key))
 
-      try:
-        kw["pkey"] = paramiko.DSSKey.from_private_key_file(private_key)
-      except Exception, e:
-        logger.warning("Could not open private key: {0}".format(private_key, str(e)))
-
-    if "ssh_username" in config:
-      kw["username"] = config.get("ssh_username")
-    if "ssh_password" in config:
-      kw["password"] = config.get("ssh_password")
+      if "ssh_pkey" in cache.params:
+        kw["pkey"] = cache.params["ssh_pkey"]
+      else:
+        try:
+          kw["pkey"] = paramiko.DSSKey.from_private_key_file(private_key, kw["password"])
+          cache.params["ssh_pkey"] = kw["pkey"] 
+        except Exception, e:
+          logger.warning("Could not open private key '{0}': {1}".format(private_key, str(e)))
 
     try:
       ssh.connect(ssh_address, **kw)
@@ -173,6 +178,24 @@ class SSHClient:
     import paramiko
     sftp = paramiko.SFTPClient.from_transport(self.ssh.get_transport())
     return SFTPClient(sftp)
+
+  def get_ssh_password(self, config):
+    import cache, getpass
+
+    if "ssh_password" in config:
+      return config.get("ssh_password")
+
+    if "ssh_password" in cache.params:
+      return cache.params["ssh_password"]
+
+    if "ssh_key_encrypted" in config:
+      pwd = getpass.getpass("Password for key file (empty to skip): ")
+      if pwd is not None and len(pwd) > 0:
+        # cache decryption so we don't ask for it again
+        cache.params["ssh_password"] = pwd 
+        return pwd
+
+    return None
 
   def connected(self):
     return self.ssh != None
